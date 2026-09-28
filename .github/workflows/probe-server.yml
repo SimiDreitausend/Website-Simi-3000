@@ -12,6 +12,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: sudo apt-get install -y -qq lftp > /dev/null
+      - name: Can the runner reach the server, and do its keys match the pinned ones?
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+        run: |
+          ssh-keyscan -T 10 "$SFTP_HOST" 2>/dev/null | grep -v '^#' | ssh-keygen -lf - || echo "keyscan failed"
+          echo "pinned:"; ssh-keygen -lf .github/one-com-known-hosts
       - name: List folders (two levels)
         env:
           LFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
@@ -20,6 +26,7 @@ jobs:
         run: |
           lftp -e "
             set sftp:connect-program 'ssh -a -x -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$GITHUB_WORKSPACE/.github/one-com-known-hosts';
+            debug 3;
             set net:max-retries 1;
             pwd;
             cls -la;
