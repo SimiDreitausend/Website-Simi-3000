@@ -40,5 +40,5 @@ Simi's access and approval workflow → handover.
 
 ## Open
 - one.com upload method (SSH/SFTP availability on the plan) — needed for the go-live bucket.
-- Admin rights on the repo for branch protection — needed for the Live bucket.
+- Admin rights on the repo for branch protection — needed for the approval-workflow bucket.
 - Simi's Claude plan — needed for the access bucket.
