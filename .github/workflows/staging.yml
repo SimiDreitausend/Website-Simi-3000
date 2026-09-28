@@ -76,7 +76,13 @@ jobs:
           AuthType Basic
           AuthName "SIMI 3000 Vorschau"
           AuthUserFile $STAGING_ROOT/.htpasswd
-          Require valid-user
+          # Plain http:// skips the login only so the https redirect above runs first — otherwise
+          # the browser would send the password unencrypted. one.com ends TLS at a proxy, so the
+          # scheme comes from REQUEST_SCHEME; %{HTTPS} is always empty here.
+          <RequireAny>
+            Require expr "%{REQUEST_SCHEME} != 'https'"
+            Require valid-user
+          </RequireAny>
 
           # robots.txt stays readable, so crawlers learn to stay away.
           <Files "robots.txt">
@@ -108,7 +114,18 @@ jobs:
           c=$(code -u "$STAGING_USER:$STAGING_PASSWORD" "$STAGING_URL/"); echo "$c  with login"; [ "$c" = 200 ]
           c=$(code -u "$STAGING_USER:$STAGING_PASSWORD" "$STAGING_URL/.htpasswd"); echo "$c  .htpasswd"; [ "$c" = 403 ]
           c=$(code "$STAGING_URL/_probe/path.php");                echo "$c  probe removed"; [ "$c" != 200 ]
+          host="${STAGING_URL#https://}"
+          c=$(code "http://$host/");                                echo "$c  http:// redirects before any login"; [ "$c" = 301 ]
+          c=$(code -H 'X-Forwarded-Proto: https' "http://$host/");  echo "$c  http:// faking https gets no content"; [ "$c" != 200 ]
+          c=$(code "$STAGING_URL/img/simi.avif");                   echo "$c  files need the login too"; [ "$c" = 401 ]
           fetch -u "$STAGING_USER:$STAGING_PASSWORD" "$STAGING_URL/" | grep -q VORSCHAU;    echo "label present"
           fetch -D - -o /dev/null "$STAGING_URL/" | grep -qi '^x-robots-tag: noindex';        echo "noindex header present"
           fetch "$STAGING_URL/robots.txt" | grep -q 'Disallow: /';                            echo "robots.txt blocks all"
           echo "✓ Vorschau is up: $STAGING_URL"
+
+      - name: Lock the Vorschau completely if anything above failed
+        # Never leave staging reachable in an unknown state.
+        if: failure()
+        run: |
+          mkdir -p lock && echo 'Require all denied' > lock/.htaccess
+          rclone copy lock ":sftp:$STAGING_ROUTE" && echo "Vorschau locked (403 for everyone) — fix and re-run"
