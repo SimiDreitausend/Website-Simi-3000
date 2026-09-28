@@ -7,10 +7,11 @@
 <!-- Throwaway tuning page for DESIGN.md. Not deployed. Serve the repo root, not public/. -->
 <style>
   :root {
-    /* All sizes are fractions of the photo's width, so the look holds at any screen size. */
-    --blur: 0.04;
-    --milk: 0.15;
-    --grain: 0.06;
+    /* All sizes are fractions of the photo's width, so the look holds at any screen size.
+       Set from JS; these are only the first-paint values. */
+    --blur: 0.03;
+    --milk: 0.4;
+    --grain: 0.25;
   }
 
   * { box-sizing: border-box; }
@@ -26,6 +27,16 @@
     padding: 16px;
     font-family: Arial, sans-serif;
     overflow: hidden;
+  }
+
+  /* Desktop only: the glove replaces the pointer everywhere, links included. Hotspot = fingertip. */
+  @media (hover: hover) and (pointer: fine) {
+    html {
+      cursor: url("../../public/img/cursor.png") 22 2, auto;
+      cursor: -webkit-image-set(url("../../public/img/cursor.png") 1x, url("../../public/img/cursor@2x.png") 2x) 22 2, auto;
+      cursor: image-set(url("../../public/img/cursor.png") 1x, url("../../public/img/cursor@2x.png") 2x) 22 2, auto;
+    }
+    a, button, summary, input, label { cursor: inherit; }
   }
 
   h1 { margin: 0; font-size: 24px; font-weight: normal; }
@@ -81,6 +92,8 @@
     right: 12px;
     bottom: 12px;
     width: min(320px, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    overflow: auto;
     background: rgb(255 255 255 / .92);
     border: 1px solid #ccc;
     border-radius: 8px;
@@ -88,12 +101,15 @@
     font-size: 13px;
     z-index: 10;
   }
-  details.panel summary { cursor: pointer; font-weight: bold; }
+  details.panel summary { font-weight: bold; }
   .panel label { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; margin-top: 10px; }
-  .panel input[type=range] { grid-column: 1 / -1; width: 100%; }
+  .panel input[type=range], .panel select { grid-column: 1 / -1; width: 100%; }
   .panel output { font-variant-numeric: tabular-nums; }
+  .panel h2 { font-size: 13px; margin: 14px 0 0; }
+  .panel .note { color: #666; margin: 4px 0 0; }
   .panel .row { display: flex; gap: 8px; margin-top: 12px; }
-  .panel textarea { width: 100%; height: 110px; margin-top: 8px; font: 11px monospace; }
+  .panel textarea { width: 100%; height: 150px; margin-top: 8px; font: 11px monospace; }
+  .panel [hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -105,13 +121,13 @@
         <source srcset="../../public/img/simi.avif" type="image/avif">
         <img id="sharp" src="../../public/img/simi.jpg" alt="Simi in einem Kakteengarten">
       </picture>
-      <div class="frost"></div>
+      <div class="frost" id="frost"></div>
       <canvas id="reveal" aria-hidden="true"></canvas>
     </div>
   </div>
 
   <div class="contact">
-    <a href="mailto:">E-Mail</a>
+    <a href="mailto:mail@simi3000.com">E-Mail</a>
     <a href="https://www.instagram.com/simi3.000/">Instagram</a>
   </div>
 
@@ -123,22 +139,46 @@
   <details class="panel" open>
     <summary>Frost settings</summary>
 
+    <label>Preset
+      <select id="preset">
+        <option value="desktop">Desktop</option>
+        <option value="mobile">Mobile</option>
+      </select></label>
+    <p class="note" id="presetNote"></p>
+
     <label>Blur strength <output data-for="blur"></output>
-      <input type="range" id="blur" min="0" max="0.12" step="0.002" value="0.04"></label>
+      <input type="range" data-key="blur" min="0" max="0.12" step="0.002"></label>
     <label>Milkiness <output data-for="milk"></output>
-      <input type="range" id="milk" min="0" max="0.6" step="0.01" value="0.15"></label>
+      <input type="range" data-key="milk" min="0" max="0.6" step="0.01"></label>
     <label>Grain <output data-for="grain"></output>
-      <input type="range" id="grain" min="0" max="0.4" step="0.01" value="0.06"></label>
+      <input type="range" data-key="grain" min="0" max="0.4" step="0.01"></label>
     <label>Brush size <output data-for="brush"></output>
-      <input type="range" id="brush" min="0.02" max="0.4" step="0.005" value="0.12"></label>
+      <input type="range" data-key="brush" min="0.01" max="0.4" step="0.005"></label>
     <label>Edge softness <output data-for="soft"></output>
-      <input type="range" id="soft" min="0" max="1" step="0.05" value="0.6"></label>
+      <input type="range" data-key="soft" min="0" max="1" step="0.05"></label>
     <label>Trail stays clear (s) <output data-for="trail"></output>
-      <input type="range" id="trail" min="0.2" max="6" step="0.1" value="1.5"></label>
+      <input type="range" data-key="trail" min="0.2" max="6" step="0.1"></label>
+
+    <div id="hintControls">
+      <h2>Idle hint (desktop)</h2>
+      <p class="note">Runs while the pointer is off the photo, stops the moment it enters.</p>
+      <label>Style
+        <select data-key="hint">
+          <option value="drift">Drift — one faint clear spot wanders slowly</option>
+          <option value="breathe">Breathe — the frost slowly thickens and thins</option>
+          <option value="off">Off</option>
+        </select></label>
+      <label>Strength <output data-for="hintStrength"></output>
+        <input type="range" data-key="hintStrength" min="0" max="1" step="0.05"></label>
+      <label>Spot size (drift) <output data-for="hintSize"></output>
+        <input type="range" data-key="hintSize" min="0.03" max="0.4" step="0.01"></label>
+      <label>Speed <output data-for="hintSpeed"></output>
+        <input type="range" data-key="hintSpeed" min="0.2" max="3" step="0.1"></label>
+    </div>
 
     <div class="row">
       <button id="copy" type="button">Copy values</button>
-      <button id="reset" type="button">Reset</button>
+      <button id="reset" type="button">Reset preset</button>
     </div>
     <textarea id="values" readonly></textarea>
   </details>
@@ -150,31 +190,57 @@
   const ctx = canvas.getContext('2d');
   const root = document.documentElement;
 
-  const defaults = { blur: 0.04, milk: 0.15, grain: 0.06, brush: 0.12, soft: 0.6, trail: 1.5 };
-  const settings = { ...defaults };
-  const units = { blur: '× width', milk: '', grain: '', brush: '× width', soft: '', trail: 's' };
+  // Tobias's tuned values (2026-09-28). The idle hint is desktop only.
+  const defaults = {
+    desktop: { blur: 0.03, milk: 0.4, grain: 0.25, brush: 0.035, soft: 0.7, trail: 0.8,
+               hint: 'drift', hintStrength: 0.3, hintSpeed: 1, hintSize: 0.12 },
+    mobile:  { blur: 0.04, milk: 0.15, grain: 0.06, brush: 0.025, soft: 0.6, trail: 0.6 },
+  };
+  const presets = structuredClone(defaults);
+  const units = { blur: '× width', brush: '× width', trail: 's', hintSize: '× width' };
+
+  const desktopQuery = matchMedia('(hover: hover) and (pointer: fine)');
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  let presetName = desktopQuery.matches ? 'desktop' : 'mobile';
+  const current = () => presets[presetName];
 
   // ---- Settings panel ----------------------------------------------------------------------
+  const presetSelect = document.getElementById('preset');
+  presetSelect.value = presetName;
+  document.getElementById('presetNote').textContent =
+    `This device counts as ${desktopQuery.matches ? 'desktop' : 'mobile'}` +
+    (reduceMotion.matches ? ' — reduced motion is on, so nothing reveals.' : '.');
+
   function applySettings() {
-    for (const key of ['blur', 'milk', 'grain']) root.style.setProperty(`--${key}`, settings[key]);
-    for (const key in settings) {
-      document.getElementById(key).value = settings[key];
-      document.querySelector(`output[data-for=${key}]`).textContent = settings[key] + ' ' + units[key];
+    const s = current();
+    for (const key of ['blur', 'milk', 'grain']) root.style.setProperty(`--${key}`, s[key]);
+    for (const input of document.querySelectorAll('[data-key]')) {
+      const key = input.dataset.key;
+      if (!(key in s)) continue;
+      input.value = s[key];
+      const out = document.querySelector(`output[data-for=${key}]`);
+      if (out) out.textContent = s[key] + (units[key] ? ' ' + units[key] : '');
     }
-    document.getElementById('values').value = JSON.stringify(settings, null, 2);
+    document.getElementById('hintControls').hidden = !('hint' in s);
+    document.getElementById('values').value = JSON.stringify(presets, null, 2);
+    resetHint();
   }
-  for (const key in settings) {
-    document.getElementById(key).addEventListener('input', (e) => {
-      settings[key] = Number(e.target.value);
+  for (const input of document.querySelectorAll('[data-key]')) {
+    input.addEventListener('input', () => {
+      const key = input.dataset.key;
+      current()[key] = input.type === 'range' ? Number(input.value) : input.value;
       applySettings();
     });
   }
-  document.getElementById('reset').onclick = () => { Object.assign(settings, defaults); applySettings(); };
+  presetSelect.onchange = () => { presetName = presetSelect.value; applySettings(); };
+  document.getElementById('reset').onclick = () => {
+    presets[presetName] = structuredClone(defaults[presetName]);
+    applySettings();
+  };
   document.getElementById('copy').onclick = async () => {
-    const text = JSON.stringify(settings, null, 2);
+    const text = JSON.stringify(presets, null, 2);
     try { await navigator.clipboard.writeText(text); } catch { document.getElementById('values').select(); }
   };
-  applySettings();
 
   // ---- Canvas sizing -----------------------------------------------------------------------
   let width = 0, height = 0, dpr = 1;
@@ -188,13 +254,13 @@
   }).observe(photo);
 
   // ---- Trail ------------------------------------------------------------------------------
-  // Each point is a spot the pointer passed, with the time it passed. A spot is fully clear
-  // when fresh and fades back to frosted over `settings.trail` seconds.
+  // Each point is a spot the pointer passed and the time it passed. It is fully clear when
+  // fresh and fades back to frosted over `trail` seconds.
   let points = [];
   let last = null;
 
   function addPoint(x, y, t) {
-    const radius = settings.brush * width;
+    const radius = current().brush * width;
     if (last) {
       // Fill gaps when the pointer moves fast, so the trail stays continuous.
       const dist = Math.hypot(x - last.x, y - last.y);
@@ -209,11 +275,14 @@
     requestDraw();
   }
 
-  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  let pointerInside = false;
+  photo.addEventListener('pointerenter', () => { pointerInside = true; last = null; resetHint(); });
+  photo.addEventListener('pointerleave', () => { pointerInside = false; last = null; resetHint(); });
   photo.addEventListener('pointermove', (e) => {
     if (reduceMotion.matches) return;
+    pointerInside = true;
     const rect = photo.getBoundingClientRect();
-    const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
     for (const ev of events.length ? events : [e]) {
       addPoint(ev.clientX - rect.left, ev.clientY - rect.top, performance.now());
     }
@@ -222,43 +291,84 @@
     last = null;
     photo.releasePointerCapture?.(e.pointerId); // let touch drags keep reporting moves here
   });
-  photo.addEventListener('pointerleave', () => { last = null; });
+
+  // ---- Idle hint (desktop) -----------------------------------------------------------------
+  // Drift: one faint, soft clear spot wanders a slow looping path (drawn once, so it never
+  // builds up). Breathe: blur and milkiness swell and ease back around their tuned values.
+  // Either fades in when the pointer leaves the photo and out when it enters.
+  let hintLevel = 0; // 0..1, eased toward 1 while the hint should run
+  let hintClock = 0, hintPrev = performance.now();
+  const hintWanted = () => {
+    const s = current();
+    return 'hint' in s && s.hint !== 'off' && !pointerInside && !reduceMotion.matches;
+  };
+  function resetHint() { requestDraw(); }
+
+  function stepHint(now) {
+    const s = current();
+    const dt = Math.min(0.1, (now - hintPrev) / 1000); hintPrev = now;
+    hintLevel += ((hintWanted() ? 1 : 0) - hintLevel) * Math.min(1, dt * 2); // ~0.5 s ease
+    if (hintLevel < 0.001) hintLevel = 0;
+    hintClock += dt * (s.hintSpeed ?? 1);
+
+    const wave = Math.sin(hintClock * 1.05); // ~6 s per cycle at speed 1
+    const breathe = s.hint === 'breathe' ? 0.35 * s.hintStrength * hintLevel * wave : 0;
+    root.style.setProperty('--blur', s.blur * (1 + breathe));
+    root.style.setProperty('--milk', Math.max(0, s.milk * (1 + breathe)));
+
+    if (s.hint !== 'drift' || !hintLevel) return null;
+    return {
+      x: width * (0.5 + 0.32 * Math.sin(hintClock * 0.37)),
+      y: height * (0.5 + 0.36 * Math.sin(hintClock * 0.23 + 1.3)),
+      r: s.hintSize * width,
+      a: s.hintStrength * hintLevel,
+    };
+  }
 
   // ---- Drawing ----------------------------------------------------------------------------
   let frame = 0;
   function requestDraw() { if (!frame) frame = requestAnimationFrame(draw); }
 
+  function spot(x, y, radius, inner, alpha) {
+    const g = ctx.createRadialGradient(x, y, inner, x, y, radius);
+    g.addColorStop(0, `rgba(0,0,0,${alpha})`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   function draw(now) {
     frame = 0;
-    const life = settings.trail * 1000;
+    const s = current();
+    const drift = stepHint(now);
+    const life = s.trail * 1000;
     points = points.filter((p) => now - p.t < life);
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = 'source-over';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (!points.length || !sharp.complete) return;
 
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const radius = settings.brush * width;
-    const inner = radius * Math.min(1 - settings.soft, 0.99); // equal radii would paint nothing
-    for (const p of points) {
-      const age = (now - p.t) / life;
-      const alpha = 1 - age * age * (3 - 2 * age); // smoothstep: holds, then eases out
-      const g = ctx.createRadialGradient(p.x, p.y, inner, p.x, p.y, radius);
-      g.addColorStop(0, `rgba(0,0,0,${alpha})`);
-      g.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
-      ctx.fill();
+    if ((points.length || drift) && sharp.complete) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const radius = s.brush * width;
+      const inner = radius * Math.min(1 - s.soft, 0.99); // equal radii would paint nothing
+      for (const p of points) {
+        const age = (now - p.t) / life;
+        spot(p.x, p.y, radius, inner, 1 - age * age * (3 - 2 * age)); // smoothstep: holds, then eases out
+      }
+      if (drift) spot(drift.x, drift.y, drift.r, 0, drift.a); // fully soft: a glow, not a hole
+      // Keep only the sharp photo where the mask is painted.
+      ctx.globalCompositeOperation = 'source-in';
+      ctx.drawImage(sharp, 0, 0, width, height);
     }
-    // Keep only the sharp photo where the mask is painted.
-    ctx.globalCompositeOperation = 'source-in';
-    ctx.drawImage(sharp, 0, 0, width, height);
 
-    requestDraw();
+    if (points.length || hintLevel > 0 || hintWanted()) requestDraw();
   }
+
   sharp.addEventListener('load', requestDraw);
+  applySettings();
 </script>
 </body>
 </html>

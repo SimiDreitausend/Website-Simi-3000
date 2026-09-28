@@ -43,8 +43,34 @@ strong, even blur that keeps colour and shape but no detail.
 
 **Reduced motion:** with `prefers-reduced-motion`, the photo stays frosted and nothing reveals.
 
-**Open — tuned in `sketches/frost/`:** brush size and edge softness, how long the trail stays
-clear, blur strength, milkiness, grain.
+**Tuned values** (in `sketches/frost/`). Sizes are fractions of the photo's width, so the look is
+the same at every screen size. "Desktop" means `(hover: hover) and (pointer: fine)`; everything
+else uses the mobile values.
+
+| Setting | Desktop | Mobile | Meaning |
+|---|---|---|---|
+| `blur` | 0.03 | 0.04 | frost blur radius × photo width |
+| `milk` | 0.40 | 0.15 | opacity of the white haze on the glass |
+| `grain` | 0.25 | 0.06 | opacity of the noise texture on the glass |
+| `brush` | 0.035 | 0.025 | radius of the clear spot × photo width |
+| `soft` | 0.7 | 0.6 | share of the brush radius that is a soft edge |
+| `trail` | 0.8 s | 0.6 s | how long a spot takes to frost over again |
+
+**Idle hint (desktop only):** while the pointer is off the photo, the effect moves subtly on its
+own, so visitors see it's interactive. It fades out the moment the pointer enters and back in
+when it leaves. Not on mobile, not with reduced motion.
+**Open:** the style — *drift* (one faint, soft clear spot wandering slowly) or *breathe* (the
+frost slowly thickens and thins) — and its strength and speed. Starting point in the sketch:
+drift, strength 0.3, spot size 0.12, speed 1.
+
+## Cursor
+
+**Desktop only:** a white cartoon glove pointing up replaces the pointer on the whole page,
+links and buttons included. Files: `public/img/cursor.png` (41 × 48) and `cursor@2x.png`,
+hotspot at the fingertip (22, 2). Phones keep their normal touch behaviour.
+
+**Open:** licence of the source clip-art (origin unknown). Keep it only if its use is cleared;
+otherwise redraw an original glove in the same spirit.
 
 ## Colour
 
@@ -60,9 +86,10 @@ For now: **Arial** (system font, nothing to host) for everything. The real typef
 Two buttons: **E-Mail** (opens a `mailto:` link) and **Instagram** (opens the profile).
 For now they are plain, unstyled buttons; styling comes later.
 
+- E-Mail: mail@simi3000.com
 - Instagram: https://www.instagram.com/simi3.000/
 
-**Open:** the email address; button order.
+**Open:** button order (sketch shows E-Mail first).
 
 ## Motion
 
