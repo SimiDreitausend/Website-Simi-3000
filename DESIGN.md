@@ -59,24 +59,23 @@ else uses the mobile values.
 **Idle hint (desktop only): breathe.** Until the visitor first moves over the photo, the frost
 slowly thickens and thins so they see it's alive. One breath every 6 s (`hintSpeed` 1), and at
 its thickest the blur and milkiness are 1.42× the base (`hintStrength` 0.6 → 1 + 0.7 × 0.6).
-Once the pointer has been over the photo, the hint eases out (~0.4 s) and doesn't return. Not
-on mobile, not with reduced motion.
+As soon as the pointer moves over the photo, the hint eases out (~0.4 s). It comes back once the
+pointer has been still for 8 s (`hintIdle`), starting again from thin, and any movement stops it
+again. Not on mobile, not with reduced motion.
 Implementation note: only the opacity of a second, static frost layer animates — animating the
 blur radius itself flickers.
 
 ## Cursor
 
 **Desktop only:** a white cartoon glove pointing up replaces the pointer on the whole page,
-links and buttons included. Files: `public/img/cursor.png` (41 × 48) and `cursor@2x.png`,
-hotspot at the fingertip (22, 2). Phones keep their normal touch behaviour.
+links and buttons included. Drawn by Tobias; source `assets/cursor-source.png`. Exports:
+`public/img/cursor.png` (40 × 48) and `cursor@2x.png`, hotspot at the fingertip (21, 2).
+Phones keep their normal touch behaviour.
 
-**Bend:** over the photo and over anything clickable, the glove tilts 8° clockwise around the
-fingertip (180 ms ease), and straightens again when it leaves; no transition with reduced
+**Bend:** over the photo and over anything clickable, the glove tilts 12° counter-clockwise
+around the fingertip (180 ms ease), and straightens again when it leaves; no transition with reduced
 motion. Because a CSS cursor can't animate, the glove is an element that follows the pointer;
 the plain CSS cursor stays as the fallback when JavaScript is off.
-
-**Open:** licence of the source clip-art (origin unknown). Keep it only if its use is cleared;
-otherwise redraw an original glove in the same spirit.
 
 ## Colour
 
@@ -95,7 +94,7 @@ For now they are plain, unstyled buttons; styling comes later.
 - E-Mail: mail@simi3000.com
 - Instagram: https://www.instagram.com/simi3.000/
 
-**Open:** button order (sketch shows E-Mail first).
+Order: E-Mail, then Instagram.
 
 ## Motion
 

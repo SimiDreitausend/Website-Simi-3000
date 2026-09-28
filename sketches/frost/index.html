@@ -15,7 +15,7 @@
     --blur-thick: 0.03;
     --milk-thick: 0;
     --thick: 0;
-    --bend: 8deg;
+    --bend: -12deg;
   }
 
   * { box-sizing: border-box; }
@@ -35,12 +35,12 @@
 
   /* ---- Cursor (desktop only) ----
      Without JS: the glove as a plain CSS cursor. With JS, html.glove hides the system cursor and
-     a glove element follows the pointer instead, so it can tilt. Hotspot = fingertip (22, 2). */
+     a glove element follows the pointer instead, so it can tilt. Hotspot = fingertip (21, 2). */
   @media (hover: hover) and (pointer: fine) {
     html {
-      cursor: url("../../public/img/cursor.png") 22 2, auto;
-      cursor: -webkit-image-set(url("../../public/img/cursor.png") 1x, url("../../public/img/cursor@2x.png") 2x) 22 2, auto;
-      cursor: image-set(url("../../public/img/cursor.png") 1x, url("../../public/img/cursor@2x.png") 2x) 22 2, auto;
+      cursor: url("../../public/img/cursor.png") 21 2, auto;
+      cursor: -webkit-image-set(url("../../public/img/cursor.png") 1x, url("../../public/img/cursor@2x.png") 2x) 21 2, auto;
+      cursor: image-set(url("../../public/img/cursor.png") 1x, url("../../public/img/cursor@2x.png") 2x) 21 2, auto;
     }
     a, button, summary, input, select, label { cursor: inherit; }
     html.glove, html.glove * { cursor: none; }
@@ -50,13 +50,13 @@
     position: fixed;
     left: 0;
     top: 0;
-    width: 41px;
+    width: 40px;
     height: 48px;
     pointer-events: none;
     z-index: 100;
     visibility: hidden;
     /* Tilts around the fingertip, so the click point never moves. */
-    transform-origin: 22px 2px;
+    transform-origin: 21px 2px;
     transition: rotate 180ms cubic-bezier(.3, .7, .4, 1);
   }
   .glove-cursor.visible { visibility: visible; }
@@ -199,7 +199,7 @@
 
     <div id="desktopControls">
       <h2>Idle hint (desktop)</h2>
-      <p class="note">Runs until the pointer first moves over the photo, then stops for good.</p>
+      <p class="note">Runs until the pointer first moves over the photo. Comes back once the pointer has been still for the idle time.</p>
       <label>Style
         <select data-key="hint">
           <option value="breathe">Breathe — the frost slowly thickens and thins</option>
@@ -212,9 +212,11 @@
         <input type="range" data-key="hintSize" min="0.03" max="0.4" step="0.01"></label>
       <label>Speed <output data-for="hintSpeed"></output>
         <input type="range" data-key="hintSpeed" min="0.2" max="3" step="0.1"></label>
+      <label>Comes back after idle <output data-for="hintIdle"></output>
+        <input type="range" data-key="hintIdle" min="2" max="30" step="1"></label>
 
       <h2>Cursor (desktop)</h2>
-      <p class="note">Tilts around the fingertip over the photo and over links.</p>
+      <p class="note">Tilts around the fingertip over the photo and over links. Negative = counter-clockwise.</p>
       <label>Bend <output data-for="bend"></output>
         <input type="range" data-key="bend" min="-30" max="30" step="1"></label>
     </div>
@@ -238,11 +240,11 @@
   // Tobias's tuned values (2026-09-28). Idle hint and cursor are desktop only.
   const defaults = {
     desktop: { blur: 0.03, milk: 0.4, grain: 0.25, brush: 0.035, soft: 0.7, trail: 0.8,
-               hint: 'breathe', hintStrength: 0.6, hintSpeed: 1, hintSize: 0.12, bend: 8 },
+               hint: 'breathe', hintStrength: 0.6, hintSpeed: 1, hintSize: 0.12, hintIdle: 8, bend: -12 },
     mobile:  { blur: 0.04, milk: 0.15, grain: 0.06, brush: 0.025, soft: 0.6, trail: 0.6 },
   };
   const presets = structuredClone(defaults);
-  const units = { blur: '× width', brush: '× width', trail: 's', hintSize: '× width', bend: '°' };
+  const units = { blur: '× width', brush: '× width', trail: 's', hintSize: '× width', hintIdle: 's', bend: '°' };
 
   const desktopQuery = matchMedia('(hover: hover) and (pointer: fine)');
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -350,16 +352,20 @@
   });
 
   // ---- Idle hint (desktop) -----------------------------------------------------------------
-  // Shows that the photo is interactive until the visitor first moves over it; then it eases
-  // out and never returns. Both styles are exact loops: one full cycle every `period` seconds.
+  // Shows that the photo is interactive until the visitor first moves over it, then eases out.
+  // After that it returns only once the pointer has been still for `hintIdle` seconds, and any
+  // movement stops it again. Both styles are exact loops that restart from their quiet point.
   //   breathe: the thick frost layer fades in and out.
   //   drift:   one faint, soft clear spot traces a figure-eight.
   let discovered = false;
+  let lastActivity = performance.now();
+  addEventListener('pointermove', () => { lastActivity = performance.now(); }, { passive: true });
   let hintLevel = 0; // 0..1, eased toward 1 while the hint should run
   let hintClock = 0, hintPrev = performance.now();
   const hintWanted = () => {
     const s = current();
-    return 'hint' in s && s.hint !== 'off' && !discovered && !reduceMotion.matches;
+    if (!('hint' in s) || s.hint === 'off' || reduceMotion.matches) return false;
+    return !discovered || performance.now() - lastActivity > s.hintIdle * 1000;
   };
 
   function stepHint(now) {
@@ -367,7 +373,7 @@
     const dt = Math.min(0.05, (now - hintPrev) / 1000); hintPrev = now;
     hintLevel += ((hintWanted() ? 1 : 0) - hintLevel) * Math.min(1, dt * 3); // ~0.4 s ease
     if (hintLevel < 0.002) hintLevel = 0;
-    if (!hintLevel) { root.style.setProperty('--thick', 0); return null; }
+    if (!hintLevel) { root.style.setProperty('--thick', 0); hintClock = 0; return null; }
 
     hintClock += dt * (s.hintSpeed ?? 1);
     const phase = (2 * Math.PI * hintClock) / (s.hint === 'breathe' ? 6 : 16);
@@ -425,6 +431,7 @@
     }
 
     if (points.length || hintLevel > 0 || hintWanted()) requestDraw();
+    else if (discovered) scheduleIdleCheck();
   }
 
   // ---- Glove cursor (desktop) ------------------------------------------------------------
@@ -434,13 +441,23 @@
     const clickable = 'a[href], button, summary, select, input, label, #photo';
     addEventListener('pointermove', (e) => {
       if (e.pointerType !== 'mouse') return;
-      glove.style.translate = `${e.clientX - 22}px ${e.clientY - 2}px`;
+      glove.style.translate = `${e.clientX - 21}px ${e.clientY - 2}px`;
       glove.classList.add('visible');
       glove.classList.toggle('bent', !!e.target.closest?.(clickable));
     }, { passive: true });
     // Leaving the window: mouseout with no element to go to.
     document.addEventListener('mouseout', (e) => { if (!e.relatedTarget) glove.classList.remove('visible'); });
     addEventListener('blur', () => glove.classList.remove('visible'));
+  }
+
+  // While nothing animates, the draw loop sleeps; wake it when the idle time could run out.
+  let idleTimer = 0;
+  function scheduleIdleCheck() {
+    clearTimeout(idleTimer);
+    const s = current();
+    if (!('hint' in s)) return;
+    const wait = s.hintIdle * 1000 - (performance.now() - lastActivity) + 50;
+    idleTimer = setTimeout(requestDraw, Math.max(50, wait));
   }
 
   sharp.addEventListener('load', requestDraw);
