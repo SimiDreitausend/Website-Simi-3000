@@ -47,8 +47,10 @@ jobs:
       - name: Smoke test the live site
         run: |
           set -e
+          # Retries ride out brief network hiccups between GitHub and one.com.
+          fetch() { curl -sS --connect-timeout 15 --max-time 30 --retry 4 --retry-delay 5 --retry-all-errors "$@"; }
           check() { # url, expected content-type prefix
-            read -r code type <<< "$(curl -sS -o /dev/null -w '%{http_code} %{content_type}' "$1")"
+            read -r code type <<< "$(fetch -o /dev/null -w '%{http_code} %{content_type}' "$1")"
             echo "$code $type  $1"
             [ "$code" = 200 ] && [[ "$type" == "$2"* ]]
           }
@@ -61,5 +63,5 @@ jobs:
             || check https://simi3000.com/js/frost.js application/javascript
           check https://simi3000.com/img/simi.avif image/avif
           check https://simi3000.com/img/simi.jpg image/jpeg
-          curl -sS https://simi3000.com/ | grep -q "SIMI 3000"
+          fetch https://simi3000.com/ | grep -q "SIMI 3000"
           echo "✓ simi3000.com serves the current site"
