@@ -43,7 +43,11 @@ DESIGN.md stays short: what the site should be and feel like, and why. Exact siz
 other values live in the code, so they're never maintained twice. Contact details live in
 CONTENT.md.
 
+## D10 — Deploy on push to main via SFTP (2026-09-28)
+GitHub Actions mirrors `public/` to one.com over SFTP (rclone) on every push to `main`, after the
+checks pass, then smoke-tests the live site. Tobias has write access but not admin on the repo,
+so Simi manages the secrets. Undo = revert and push.
+
 ## Open
-- one.com upload method (SSH/SFTP availability on the plan) — needed for the go-live bucket.
-- Admin rights on the repo for branch protection — needed for the approval-workflow bucket.
+- Branch protection on `main`: Tobias cannot be admin, so Simi sets it up (guided) — needed for the approval-workflow bucket.
 - Simi's Claude plan — needed for the access bucket.

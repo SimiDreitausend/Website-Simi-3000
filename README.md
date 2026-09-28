@@ -38,6 +38,28 @@ local links resolve, and no file is over 1 MB. Standard library only; CI runs it
 
 ## Deployment
 
-Not set up yet. Planned (see DECISIONS.md, D2 and D8): first, pushes to `main` deploy to
-simi3000.com; later, pull requests deploy to a password-protected Vorschau subdomain and merge
-to `main` after Tobias's approval.
+**Every push to `main` goes live** on https://simi3000.com within about a minute
+(`.github/workflows/deploy.yml`):
+
+1. `scripts/check.py` runs; if it fails, nothing is uploaded.
+2. `public/` is mirrored to one.com over SFTP — the server ends up an exact copy, including
+   deletions.
+3. A smoke test fetches the pages, stylesheet, script and photo from the live site.
+
+Watch it under the repository's **Actions** tab. To deploy again without a change, use
+**Actions → Deploy → Run workflow**.
+
+**Undo a bad deploy:** revert the commit and push — the previous version goes live.
+
+```bash
+git revert HEAD
+git push
+```
+
+**Credentials** are repository secrets `SFTP_HOST`, `SFTP_USER` and `SFTP_PASSWORD` (managed by
+the repo owner under Settings → Secrets and variables → Actions). The server's host keys are
+pinned in `.github/one-com-known-hosts`. On the server, the site lives in
+`webroots/by-route/simi3000.com_` (the same folder serves `www.simi3000.com`).
+
+Planned (DECISIONS.md, D2): a password-protected Vorschau where changes are reviewed before they
+reach `main`.

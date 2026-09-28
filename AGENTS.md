@@ -53,8 +53,9 @@ doesn't cover; ask instead.
 ## Git
 
 - Small commits with descriptive messages.
-- Current phase (no deployment yet): commit to `main`, push only when Tobias asks.
-- Once deployment exists, `main` means **live**. After the Vorschau exists, changes go through
-  a pull request that deploys to the password-protected preview first, and Tobias approves the
-  merge. This section
+- **`main` is live:** every push to `main` deploys to simi3000.com. Push only when Tobias asks,
+  and only after the checks and a local look.
+- Once the Vorschau exists, changes go through a pull request that deploys to the
+  password-protected preview first, and Tobias approves the merge. This section will be updated
+  then. This section
   will be updated when that bucket lands.

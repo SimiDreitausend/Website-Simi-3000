@@ -1,0 +1,65 @@
+# Deploy: every push to main uploads public/ to simi3000.com (one.com, over SFTP).
+# The server ends up an exact mirror of public/ — files removed from the repo are removed there.
+# Credentials are repository secrets (SFTP_HOST, SFTP_USER, SFTP_PASSWORD); the server's host
+# keys are pinned in .github/one-com-known-hosts, so it only ever uploads to that server.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never run two deploys at once; a newer push waits for the running one.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check public/
+        run: python3 scripts/check.py
+
+      - run: sudo apt-get install -y -qq rclone > /dev/null
+
+      - name: Upload public/ to simi3000.com
+        env:
+          RCLONE_SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          RCLONE_SFTP_USER: ${{ secrets.SFTP_USER }}
+          SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+          RCLONE_SFTP_KNOWN_HOSTS_FILE: .github/one-com-known-hosts
+          RCLONE_SFTP_SHELL_TYPE: none
+        run: |
+          RCLONE_SFTP_PASS="$(rclone obscure "$SFTP_PASSWORD")"
+          echo "::add-mask::$RCLONE_SFTP_PASS"
+          export RCLONE_SFTP_PASS
+          # --ignore-times: upload every file every time. The site is tiny, and git checkouts
+          # reset modification times, so comparing them would be meaningless.
+          rclone sync public :sftp:webroots/by-route/simi3000.com_ \
+            --ignore-times --delete-after --stats-one-line -v
+
+      - name: Smoke test the live site
+        run: |
+          set -e
+          check() { # url, expected content-type prefix
+            read -r code type <<< "$(curl -sS -o /dev/null -w '%{http_code} %{content_type}' "$1")"
+            echo "$code $type  $1"
+            [ "$code" = 200 ] && [[ "$type" == "$2"* ]]
+          }
+          sleep 5
+          check https://simi3000.com/ text/html
+          check https://simi3000.com/impressum/ text/html
+          check https://simi3000.com/datenschutz/ text/html
+          check https://simi3000.com/css/home.css text/css
+          check https://simi3000.com/js/frost.js text/javascript \
+            || check https://simi3000.com/js/frost.js application/javascript
+          check https://simi3000.com/img/simi.avif image/avif
+          check https://simi3000.com/img/simi.jpg image/jpeg
+          curl -sS https://simi3000.com/ | grep -q "SIMI 3000"
+          echo "✓ simi3000.com serves the current site"

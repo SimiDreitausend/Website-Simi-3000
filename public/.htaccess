@@ -1,0 +1,15 @@
+# Apache settings for one.com.
+
+# Older servers don't know AVIF and would send it as a download, which breaks the photo.
+AddType image/avif .avif
+
+# File names aren't versioned, so keep caches short: pages are always revalidated, everything
+# else for an hour. A deploy is visible to returning visitors within the hour at the latest.
+<IfModule mod_headers.c>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  <FilesMatch "\.(css|js|avif|jpg|png)$">
+    Header set Cache-Control "public, max-age=3600"
+  </FilesMatch>
+</IfModule>
