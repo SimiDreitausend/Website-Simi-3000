@@ -6,8 +6,9 @@ in the code. Decisions here are Tobias's — if something isn't covered, ask; do
 ## The page
 
 One screen, no scrolling, on phone and desktop. On a single centred axis: **SIMI 3000** at the
-top, the photo as large as fits, then two plain buttons, **E-Mail** and **Instagram**. Small
-Impressum and Datenschutz links at the very bottom. German only; no other text.
+top, the photo as large as fits, then two links, **E-Mail** and **Instagram**. Small
+Impressum and Datenschutz links at the very bottom. All links are classic, unstyled blue HTML
+links. German only; no other text.
 
 ## The photo
 
@@ -29,4 +30,4 @@ straightens when it leaves. Phones keep normal touch.
 
 ## Open until after launch
 
-Brand essence, colour, typeface (Arial until then), button styling, look of the legal pages.
+Brand essence, colour, typeface (Arial until then), look of the legal pages.
