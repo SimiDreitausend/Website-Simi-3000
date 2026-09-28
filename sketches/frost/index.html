@@ -7,11 +7,15 @@
 <!-- Throwaway tuning page for DESIGN.md. Not deployed. Serve the repo root, not public/. -->
 <style>
   :root {
-    /* All sizes are fractions of the photo's width, so the look holds at any screen size.
-       Set from JS; these are only the first-paint values. */
+    /* Frost sizes are fractions of the photo's width, so the look holds at any screen size.
+       All of these are set from JS; the values here only cover the first paint. */
     --blur: 0.03;
     --milk: 0.4;
     --grain: 0.25;
+    --blur-thick: 0.03;
+    --milk-thick: 0;
+    --thick: 0;
+    --bend: 8deg;
   }
 
   * { box-sizing: border-box; }
@@ -29,14 +33,36 @@
     overflow: hidden;
   }
 
-  /* Desktop only: the glove replaces the pointer everywhere, links included. Hotspot = fingertip. */
+  /* ---- Cursor (desktop only) ----
+     Without JS: the glove as a plain CSS cursor. With JS, html.glove hides the system cursor and
+     a glove element follows the pointer instead, so it can tilt. Hotspot = fingertip (22, 2). */
   @media (hover: hover) and (pointer: fine) {
     html {
       cursor: url("../../public/img/cursor.png") 22 2, auto;
       cursor: -webkit-image-set(url("../../public/img/cursor.png") 1x, url("../../public/img/cursor@2x.png") 2x) 22 2, auto;
       cursor: image-set(url("../../public/img/cursor.png") 1x, url("../../public/img/cursor@2x.png") 2x) 22 2, auto;
     }
-    a, button, summary, input, label { cursor: inherit; }
+    a, button, summary, input, select, label { cursor: inherit; }
+    html.glove, html.glove * { cursor: none; }
+  }
+
+  .glove-cursor {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 41px;
+    height: 48px;
+    pointer-events: none;
+    z-index: 100;
+    visibility: hidden;
+    /* Tilts around the fingertip, so the click point never moves. */
+    transform-origin: 22px 2px;
+    transition: rotate 180ms cubic-bezier(.3, .7, .4, 1);
+  }
+  .glove-cursor.visible { visibility: visible; }
+  .glove-cursor.bent { rotate: var(--bend); }
+  @media (prefers-reduced-motion: reduce) {
+    .glove-cursor { transition: none; }
   }
 
   h1 { margin: 0; font-size: 24px; font-weight: normal; }
@@ -59,7 +85,7 @@
     touch-action: none;
   }
 
-  .photo img, .photo canvas, .frost {
+  .photo img, .photo canvas, .frost, .grain {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -67,16 +93,23 @@
     display: block;
   }
 
+  /* Base frost: static, never animated. */
   .frost {
     backdrop-filter: blur(calc(var(--blur) * var(--w)));
     -webkit-backdrop-filter: blur(calc(var(--blur) * var(--w)));
     background-color: rgb(255 255 255 / var(--milk));
   }
 
-  .frost::after {
-    content: "";
-    position: absolute;
-    inset: 0;
+  /* Breathe: a second, static layer that makes the glass thicker. Only its opacity animates —
+     animating the blur radius itself re-renders the blur every frame and flickers. */
+  .frost.thick {
+    backdrop-filter: blur(calc(var(--blur-thick) * var(--w)));
+    -webkit-backdrop-filter: blur(calc(var(--blur-thick) * var(--w)));
+    background-color: rgb(255 255 255 / var(--milk-thick));
+    opacity: var(--thick);
+  }
+
+  .grain {
     opacity: var(--grain);
     mix-blend-mode: overlay;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -107,7 +140,7 @@
   .panel output { font-variant-numeric: tabular-nums; }
   .panel h2 { font-size: 13px; margin: 14px 0 0; }
   .panel .note { color: #666; margin: 4px 0 0; }
-  .panel .row { display: flex; gap: 8px; margin-top: 12px; }
+  .panel .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
   .panel textarea { width: 100%; height: 150px; margin-top: 8px; font: 11px monospace; }
   .panel [hidden] { display: none; }
 </style>
@@ -121,7 +154,9 @@
         <source srcset="../../public/img/simi.avif" type="image/avif">
         <img id="sharp" src="../../public/img/simi.jpg" alt="Simi in einem Kakteengarten">
       </picture>
-      <div class="frost" id="frost"></div>
+      <div class="frost"></div>
+      <div class="frost thick"></div>
+      <div class="grain"></div>
       <canvas id="reveal" aria-hidden="true"></canvas>
     </div>
   </div>
@@ -135,6 +170,9 @@
     <a href="#">Impressum</a>
     <a href="#">Datenschutz</a>
   </footer>
+
+  <img class="glove-cursor" id="glove" src="../../public/img/cursor.png"
+       srcset="../../public/img/cursor.png 1x, ../../public/img/cursor@2x.png 2x" alt="">
 
   <details class="panel" open>
     <summary>Frost settings</summary>
@@ -159,13 +197,13 @@
     <label>Trail stays clear (s) <output data-for="trail"></output>
       <input type="range" data-key="trail" min="0.2" max="6" step="0.1"></label>
 
-    <div id="hintControls">
+    <div id="desktopControls">
       <h2>Idle hint (desktop)</h2>
-      <p class="note">Runs while the pointer is off the photo, stops the moment it enters.</p>
+      <p class="note">Runs until the pointer first moves over the photo, then stops for good.</p>
       <label>Style
         <select data-key="hint">
-          <option value="drift">Drift — one faint clear spot wanders slowly</option>
           <option value="breathe">Breathe — the frost slowly thickens and thins</option>
+          <option value="drift">Drift — one faint clear spot loops slowly</option>
           <option value="off">Off</option>
         </select></label>
       <label>Strength <output data-for="hintStrength"></output>
@@ -174,9 +212,15 @@
         <input type="range" data-key="hintSize" min="0.03" max="0.4" step="0.01"></label>
       <label>Speed <output data-for="hintSpeed"></output>
         <input type="range" data-key="hintSpeed" min="0.2" max="3" step="0.1"></label>
+
+      <h2>Cursor (desktop)</h2>
+      <p class="note">Tilts around the fingertip over the photo and over links.</p>
+      <label>Bend <output data-for="bend"></output>
+        <input type="range" data-key="bend" min="-30" max="30" step="1"></label>
     </div>
 
     <div class="row">
+      <button id="replay" type="button">Replay hint</button>
       <button id="copy" type="button">Copy values</button>
       <button id="reset" type="button">Reset preset</button>
     </div>
@@ -187,17 +231,18 @@
   const photo = document.getElementById('photo');
   const sharp = document.getElementById('sharp');
   const canvas = document.getElementById('reveal');
+  const glove = document.getElementById('glove');
   const ctx = canvas.getContext('2d');
   const root = document.documentElement;
 
-  // Tobias's tuned values (2026-09-28). The idle hint is desktop only.
+  // Tobias's tuned values (2026-09-28). Idle hint and cursor are desktop only.
   const defaults = {
     desktop: { blur: 0.03, milk: 0.4, grain: 0.25, brush: 0.035, soft: 0.7, trail: 0.8,
-               hint: 'drift', hintStrength: 0.3, hintSpeed: 1, hintSize: 0.12 },
+               hint: 'breathe', hintStrength: 0.6, hintSpeed: 1, hintSize: 0.12, bend: 8 },
     mobile:  { blur: 0.04, milk: 0.15, grain: 0.06, brush: 0.025, soft: 0.6, trail: 0.6 },
   };
   const presets = structuredClone(defaults);
-  const units = { blur: '× width', brush: '× width', trail: 's', hintSize: '× width' };
+  const units = { blur: '× width', brush: '× width', trail: 's', hintSize: '× width', bend: '°' };
 
   const desktopQuery = matchMedia('(hover: hover) and (pointer: fine)');
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -209,11 +254,23 @@
   presetSelect.value = presetName;
   document.getElementById('presetNote').textContent =
     `This device counts as ${desktopQuery.matches ? 'desktop' : 'mobile'}` +
-    (reduceMotion.matches ? ' — reduced motion is on, so nothing reveals.' : '.');
+    (reduceMotion.matches ? ' — reduced motion is on, so nothing reveals or moves.' : '.');
 
   function applySettings() {
     const s = current();
-    for (const key of ['blur', 'milk', 'grain']) root.style.setProperty(`--${key}`, s[key]);
+    root.style.setProperty('--blur', s.blur);
+    root.style.setProperty('--milk', s.milk);
+    root.style.setProperty('--grain', s.grain);
+    root.style.setProperty('--bend', (s.bend ?? 0) + 'deg');
+
+    // Thick layer for breathe: at full opacity the two layers together give blur and milk
+    // (1 + 0.7 × strength) times the base. Stacked blurs add in quadrature and stacked white
+    // hazes multiply their transparency, hence the maths.
+    const k = 1 + 0.7 * (s.hintStrength ?? 0);
+    const blurTarget = s.blur * k, milkTarget = Math.min(0.95, s.milk * k);
+    root.style.setProperty('--blur-thick', Math.sqrt(Math.max(0, blurTarget ** 2 - s.blur ** 2)));
+    root.style.setProperty('--milk-thick', s.milk < 1 ? (milkTarget - s.milk) / (1 - s.milk) : 0);
+
     for (const input of document.querySelectorAll('[data-key]')) {
       const key = input.dataset.key;
       if (!(key in s)) continue;
@@ -221,9 +278,9 @@
       const out = document.querySelector(`output[data-for=${key}]`);
       if (out) out.textContent = s[key] + (units[key] ? ' ' + units[key] : '');
     }
-    document.getElementById('hintControls').hidden = !('hint' in s);
+    document.getElementById('desktopControls').hidden = !('hint' in s);
     document.getElementById('values').value = JSON.stringify(presets, null, 2);
-    resetHint();
+    requestDraw();
   }
   for (const input of document.querySelectorAll('[data-key]')) {
     input.addEventListener('input', () => {
@@ -237,6 +294,7 @@
     presets[presetName] = structuredClone(defaults[presetName]);
     applySettings();
   };
+  document.getElementById('replay').onclick = () => { discovered = false; hintClock = 0; requestDraw(); };
   document.getElementById('copy').onclick = async () => {
     const text = JSON.stringify(presets, null, 2);
     try { await navigator.clipboard.writeText(text); } catch { document.getElementById('values').select(); }
@@ -275,12 +333,11 @@
     requestDraw();
   }
 
-  let pointerInside = false;
-  photo.addEventListener('pointerenter', () => { pointerInside = true; last = null; resetHint(); });
-  photo.addEventListener('pointerleave', () => { pointerInside = false; last = null; resetHint(); });
+  photo.addEventListener('pointerenter', () => { last = null; discovered = true; });
+  photo.addEventListener('pointerleave', () => { last = null; });
   photo.addEventListener('pointermove', (e) => {
+    discovered = true;
     if (reduceMotion.matches) return;
-    pointerInside = true;
     const rect = photo.getBoundingClientRect();
     const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
     for (const ev of events.length ? events : [e]) {
@@ -293,33 +350,36 @@
   });
 
   // ---- Idle hint (desktop) -----------------------------------------------------------------
-  // Drift: one faint, soft clear spot wanders a slow looping path (drawn once, so it never
-  // builds up). Breathe: blur and milkiness swell and ease back around their tuned values.
-  // Either fades in when the pointer leaves the photo and out when it enters.
+  // Shows that the photo is interactive until the visitor first moves over it; then it eases
+  // out and never returns. Both styles are exact loops: one full cycle every `period` seconds.
+  //   breathe: the thick frost layer fades in and out.
+  //   drift:   one faint, soft clear spot traces a figure-eight.
+  let discovered = false;
   let hintLevel = 0; // 0..1, eased toward 1 while the hint should run
   let hintClock = 0, hintPrev = performance.now();
   const hintWanted = () => {
     const s = current();
-    return 'hint' in s && s.hint !== 'off' && !pointerInside && !reduceMotion.matches;
+    return 'hint' in s && s.hint !== 'off' && !discovered && !reduceMotion.matches;
   };
-  function resetHint() { requestDraw(); }
 
   function stepHint(now) {
     const s = current();
-    const dt = Math.min(0.1, (now - hintPrev) / 1000); hintPrev = now;
-    hintLevel += ((hintWanted() ? 1 : 0) - hintLevel) * Math.min(1, dt * 2); // ~0.5 s ease
-    if (hintLevel < 0.001) hintLevel = 0;
+    const dt = Math.min(0.05, (now - hintPrev) / 1000); hintPrev = now;
+    hintLevel += ((hintWanted() ? 1 : 0) - hintLevel) * Math.min(1, dt * 3); // ~0.4 s ease
+    if (hintLevel < 0.002) hintLevel = 0;
+    if (!hintLevel) { root.style.setProperty('--thick', 0); return null; }
+
     hintClock += dt * (s.hintSpeed ?? 1);
+    const phase = (2 * Math.PI * hintClock) / (s.hint === 'breathe' ? 6 : 16);
 
-    const wave = Math.sin(hintClock * 1.05); // ~6 s per cycle at speed 1
-    const breathe = s.hint === 'breathe' ? 0.35 * s.hintStrength * hintLevel * wave : 0;
-    root.style.setProperty('--blur', s.blur * (1 + breathe));
-    root.style.setProperty('--milk', Math.max(0, s.milk * (1 + breathe)));
+    // Starts at 0 (thin) and returns to 0 each cycle, so it loops without a seam.
+    const breath = s.hint === 'breathe' ? 0.5 - 0.5 * Math.cos(phase) : 0;
+    root.style.setProperty('--thick', breath * hintLevel);
 
-    if (s.hint !== 'drift' || !hintLevel) return null;
+    if (s.hint !== 'drift') return null;
     return {
-      x: width * (0.5 + 0.32 * Math.sin(hintClock * 0.37)),
-      y: height * (0.5 + 0.36 * Math.sin(hintClock * 0.23 + 1.3)),
+      x: width * (0.5 + 0.3 * Math.sin(phase)),
+      y: height * (0.5 + 0.3 * Math.sin(2 * phase)),
       r: s.hintSize * width,
       a: s.hintStrength * hintLevel,
     };
@@ -365,6 +425,22 @@
     }
 
     if (points.length || hintLevel > 0 || hintWanted()) requestDraw();
+  }
+
+  // ---- Glove cursor (desktop) ------------------------------------------------------------
+  // Follows the pointer and tilts slightly over the photo and over anything clickable.
+  if (desktopQuery.matches) {
+    root.classList.add('glove');
+    const clickable = 'a[href], button, summary, select, input, label, #photo';
+    addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      glove.style.translate = `${e.clientX - 22}px ${e.clientY - 2}px`;
+      glove.classList.add('visible');
+      glove.classList.toggle('bent', !!e.target.closest?.(clickable));
+    }, { passive: true });
+    // Leaving the window: mouseout with no element to go to.
+    document.addEventListener('mouseout', (e) => { if (!e.relatedTarget) glove.classList.remove('visible'); });
+    addEventListener('blur', () => glove.classList.remove('visible'));
   }
 
   sharp.addEventListener('load', requestDraw);

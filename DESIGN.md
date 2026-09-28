@@ -56,18 +56,24 @@ else uses the mobile values.
 | `soft` | 0.7 | 0.6 | share of the brush radius that is a soft edge |
 | `trail` | 0.8 s | 0.6 s | how long a spot takes to frost over again |
 
-**Idle hint (desktop only):** while the pointer is off the photo, the effect moves subtly on its
-own, so visitors see it's interactive. It fades out the moment the pointer enters and back in
-when it leaves. Not on mobile, not with reduced motion.
-**Open:** the style — *drift* (one faint, soft clear spot wandering slowly) or *breathe* (the
-frost slowly thickens and thins) — and its strength and speed. Starting point in the sketch:
-drift, strength 0.3, spot size 0.12, speed 1.
+**Idle hint (desktop only): breathe.** Until the visitor first moves over the photo, the frost
+slowly thickens and thins so they see it's alive. One breath every 6 s (`hintSpeed` 1), and at
+its thickest the blur and milkiness are 1.42× the base (`hintStrength` 0.6 → 1 + 0.7 × 0.6).
+Once the pointer has been over the photo, the hint eases out (~0.4 s) and doesn't return. Not
+on mobile, not with reduced motion.
+Implementation note: only the opacity of a second, static frost layer animates — animating the
+blur radius itself flickers.
 
 ## Cursor
 
 **Desktop only:** a white cartoon glove pointing up replaces the pointer on the whole page,
 links and buttons included. Files: `public/img/cursor.png` (41 × 48) and `cursor@2x.png`,
 hotspot at the fingertip (22, 2). Phones keep their normal touch behaviour.
+
+**Bend:** over the photo and over anything clickable, the glove tilts 8° clockwise around the
+fingertip (180 ms ease), and straightens again when it leaves; no transition with reduced
+motion. Because a CSS cursor can't animate, the glove is an element that follows the pointer;
+the plain CSS cursor stays as the fallback when JavaScript is off.
 
 **Open:** licence of the source clip-art (origin unknown). Keep it only if its use is cleared;
 otherwise redraw an original glove in the same spirit.
