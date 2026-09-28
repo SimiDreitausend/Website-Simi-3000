@@ -19,11 +19,11 @@ DECISIONS.md             why it's built this way; open questions
 ## Local preview
 
 ```bash
-python3 -m http.server 8000 -d public
+python3 -m http.server 8030 -d public
 ```
 
-Then open http://localhost:8000. For a phone on the same Wi-Fi, use
-`http://<your Mac's IP>:8000` (`ipconfig getifaddr en0`).
+Then open http://localhost:8030. For a phone on the same Wi-Fi, use
+`http://<your Mac's IP>:8030` (`ipconfig getifaddr en0`).
 
 ## Checks
 

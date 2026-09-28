@@ -41,7 +41,7 @@ doesn't cover; ask instead.
 ## Verifying a change
 
 1. `python3 scripts/check.py` passes (CI runs it on every push and pull request).
-2. `python3 -m http.server 8000 -d public`, then open http://localhost:8000 at phone and desktop
+2. `python3 -m http.server 8030 -d public`, then open http://localhost:8030 at phone and desktop
    widths. Look at the actual change, including the legal pages if you touched shared markup.
 
 ## Git
