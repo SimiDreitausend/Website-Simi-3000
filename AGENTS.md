@@ -7,9 +7,10 @@ Rules for any AI agent (Claude, Codex, …) working in this repository. Humans: 
 The teaser website for SIMI 3000, an art project by Simi. One page: a photo with a visual
 effect, plus a way to get in touch. German only. Live at https://simi3000.com.
 
-The site is deliberately small. The hard requirement is the workflow around it: Simi, who is not
-technical, changes text and images without ever seeing git, and nothing goes live without
-Tobias's approval. See DECISIONS.md for why things are the way they are.
+The site is deliberately small. Current priority: get simi3000.com online with the designed
+page. After launch, the workflow around it matters most: Simi, who is not technical, changes
+text and images without ever seeing git, and nothing goes live without Tobias's approval. See
+DECISIONS.md for why things are the way they are.
 
 ## Sources of truth
 
@@ -48,6 +49,7 @@ doesn't cover; ask instead.
 
 - Small commits with descriptive messages.
 - Current phase (no deployment yet): commit to `main`, push only when Tobias asks.
-- Once the pipeline exists, `main` means **live**: changes go through a pull request that
-  deploys to the password-protected preview first, and Tobias approves the merge. This section
+- Once deployment exists, `main` means **live**. After the Vorschau exists, changes go through
+  a pull request that deploys to the password-protected preview first, and Tobias approves the
+  merge. This section
   will be updated when that bucket lands.

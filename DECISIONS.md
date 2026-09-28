@@ -32,7 +32,13 @@ AGENTS.md (agent rules; CLAUDE.md imports it), DESIGN.md, CONTENT.md, DECISIONS.
 Plain HTML/CSS/JS with no build step, hosted on one.com at simi3000.com. Only `public/` is
 uploaded. The repository is public, so secrets live only in GitHub Actions secrets.
 
+## D8 — Online first (2026-09-28)
+Supersedes the priority in D1 and the order in D4. The first goal is getting simi3000.com online
+with the designed teaser page; the edit-and-approval workflow comes after launch.
+Order: foundation → DESIGN.md → teaser page (local) → go live on simi3000.com → Vorschau →
+Simi's access and approval workflow → handover.
+
 ## Open
-- one.com upload method (SSH/SFTP availability on the plan) — needed for the Vorschau bucket.
+- one.com upload method (SSH/SFTP availability on the plan) — needed for the go-live bucket.
 - Admin rights on the repo for branch protection — needed for the Live bucket.
 - Simi's Claude plan — needed for the access bucket.

@@ -36,5 +36,6 @@ local links resolve, and no file is over 1 MB. Standard library only; CI runs it
 
 ## Deployment
 
-Not set up yet. Planned (see DECISIONS.md, D2): pull requests deploy to a password-protected
-Vorschau subdomain; merging to `main` after Tobias's approval deploys to simi3000.com.
+Not set up yet. Planned (see DECISIONS.md, D2 and D8): first, pushes to `main` deploy to
+simi3000.com; later, pull requests deploy to a password-protected Vorschau subdomain and merge
+to `main` after Tobias's approval.
