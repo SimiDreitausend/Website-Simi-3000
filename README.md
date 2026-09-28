@@ -38,7 +38,11 @@ local links resolve, and no file is over 1 MB. Standard library only; CI runs it
 
 ## Deployment
 
-**Every push to `main` goes live** on https://simi3000.com within about a minute
+**How a change goes live** (DECISIONS.md, D12): open a pull request → it appears on the
+Vorschau → **the other person approves it on GitHub** → merge. Direct pushes to `main` are
+blocked by a ruleset, and nobody can approve their own pull request.
+
+**Every merge into `main` goes live** on https://simi3000.com within about a minute
 (`.github/workflows/deploy.yml`):
 
 1. `scripts/check.py` runs; if it fails, nothing is uploaded.
@@ -49,12 +53,8 @@ local links resolve, and no file is over 1 MB. Standard library only; CI runs it
 Watch it under the repository's **Actions** tab. To deploy again without a change, use
 **Actions → Deploy → Run workflow**.
 
-**Undo a bad deploy:** revert the commit and push — the previous version goes live.
-
-```bash
-git revert HEAD
-git push
-```
+**Undo a bad deploy:** revert the commit in a new pull request (GitHub's **Revert** button on the
+merged pull request does this); once it's approved and merged, the previous version is live.
 
 **Credentials** are repository secrets `SFTP_HOST`, `SFTP_USER` and `SFTP_PASSWORD` (managed by
 the repo owner under Settings → Secrets and variables → Actions). The server's host keys are

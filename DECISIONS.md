@@ -53,6 +53,15 @@ Every pull request against `main` deploys the whole site to staging.simi3000.com
 latest wins), behind HTTP basic auth, with noindex header, disallow-all robots.txt and a
 VORSCHAU label — all added to a copy during upload, never to `public/`.
 
+## D12 — Four-eyes approval for every change (2026-09-28)
+Supersedes D2. Every change — by Simi, by Tobias, or by an agent working for either — goes
+**Vorschau → approval by the other person on GitHub → live**. Nobody publishes their own change.
+Enforced by a ruleset on `main` (set up by Simi, who is the repo admin): pull request required,
+one approval, stale approvals dismissed on new commits, approval of the latest push required,
+`check` must pass, no bypass for anyone. Simi approves directly on GitHub (not via an agent).
+Consequence for the access bucket: Simi's changes must be authored under Simi's own GitHub
+account, so that Tobias is the one who approves them.
+
 ## Open
-- Branch protection on `main`: Tobias cannot be admin, so Simi sets it up (guided) — needed for the approval-workflow bucket.
+- The `main` ruleset (D12): Simi sets it up from the guide.
 - Simi's Claude plan — needed for the access bucket.
