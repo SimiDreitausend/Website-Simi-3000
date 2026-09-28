@@ -11,25 +11,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - run: sudo apt-get install -y -qq lftp > /dev/null
+      - run: sudo apt-get install -y -qq sshpass > /dev/null
       - name: Can the runner reach the server, and do its keys match the pinned ones?
         env:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
         run: |
           ssh-keyscan -T 10 "$SFTP_HOST" 2>/dev/null | grep -v '^#' | ssh-keygen -lf - || echo "keyscan failed"
           echo "pinned:"; ssh-keygen -lf .github/one-com-known-hosts
-      - name: List folders (two levels)
+      - name: List folders
         env:
-          LFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+          SSHPASS: ${{ secrets.SFTP_PASSWORD }}
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
           SFTP_USER: ${{ secrets.SFTP_USER }}
         run: |
-          lftp -e "
-            set sftp:connect-program 'ssh -a -x -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$GITHUB_WORKSPACE/.github/one-com-known-hosts';
-            debug 3;
-            set net:max-retries 1;
-            pwd;
-            cls -la;
-            find --maxdepth=2 .;
-            bye
-          " --env-password "sftp://$SFTP_USER@$SFTP_HOST"
+          printf 'pwd\nls -la\nls -la *\n' > batch
+          sshpass -e sftp -v -b batch \
+            -o StrictHostKeyChecking=yes -o UserKnownHostsFile=.github/one-com-known-hosts \
+            -o PubkeyAuthentication=no -o PreferredAuthentications=password,keyboard-interactive \
+            "$SFTP_USER@$SFTP_HOST" 2>&1 | grep -vE '^debug1: (Reading|kex|compat|Local|Remote|SSH2_MSG|expecting|rekey|channel|Sending env|pledge|client_input|Requesting|Entering|Sending subsystem|Server accepts|Will attempt)'
