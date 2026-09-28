@@ -61,5 +61,16 @@ the repo owner under Settings → Secrets and variables → Actions). The server
 pinned in `.github/one-com-known-hosts`. On the server, the site lives in
 `webroots/by-route/simi3000.com_` (the same folder serves `www.simi3000.com`).
 
-Planned (DECISIONS.md, D2): a password-protected Vorschau where changes are reviewed before they
-reach `main`.
+## Vorschau (staging)
+
+https://staging.simi3000.com — a complete copy of the site with a pull request's changes, behind
+a login and hidden from search engines (`.github/workflows/staging.yml`).
+
+- **Every pull request against `main`** deploys its version there, and again on every new
+  commit. There is one Vorschau; the latest run wins. **Actions → Vorschau → Run workflow**
+  deploys any branch by hand.
+- Staging-only additions are made to a copy while uploading — `public/` never contains them:
+  the login (`.htaccess` + a bcrypt `.htpasswd`), an `X-Robots-Tag: noindex` header, a
+  `robots.txt` that disallows everything, and a black **VORSCHAU** label on every page.
+- Login credentials are the secrets `STAGING_USER` and `STAGING_PASSWORD`.
+- On the server it lives in `webroots/by-route/staging.simi3000.com_` (one.com subdomain).

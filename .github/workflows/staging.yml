@@ -1,0 +1,114 @@
+# Vorschau: deploys a pull request's version of the whole site to staging.simi3000.com, behind a
+# password and hidden from search engines. There is one Vorschau; the latest run wins.
+# public/ is not changed: the staging-only additions (login, noindex, robots.txt, VORSCHAU label)
+# are added to a copy while uploading. Credentials: SFTP_* as for Deploy, plus STAGING_USER and
+# STAGING_PASSWORD for the login.
+name: Vorschau
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  STAGING_URL: https://staging.simi3000.com
+  STAGING_ROUTE: webroots/by-route/staging.simi3000.com_
+
+jobs:
+  vorschau:
+    runs-on: ubuntu-latest
+    env:
+      RCLONE_SFTP_HOST: ${{ secrets.SFTP_HOST }}
+      RCLONE_SFTP_USER: ${{ secrets.SFTP_USER }}
+      RCLONE_SFTP_KNOWN_HOSTS_FILE: .github/one-com-known-hosts
+      RCLONE_SFTP_SHELL_TYPE: none
+      STAGING_USER: ${{ secrets.STAGING_USER }}
+      STAGING_PASSWORD: ${{ secrets.STAGING_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check public/
+        run: python3 scripts/check.py
+
+      - run: sudo apt-get install -y -qq rclone apache2-utils > /dev/null
+
+      - name: Connect
+        env:
+          SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+        run: |
+          [ -n "$STAGING_USER" ] && [ -n "$STAGING_PASSWORD" ] || { echo "::error::STAGING_USER / STAGING_PASSWORD secrets missing"; exit 1; }
+          pass="$(rclone obscure "$SFTP_PASSWORD")"
+          echo "::add-mask::$pass"
+          echo "RCLONE_SFTP_PASS=$pass" >> "$GITHUB_ENV"
+
+      - name: Find the staging folder's path as the web server sees it
+        # The login file must be referenced by its absolute server path, which can differ from
+        # what SFTP shows. A throwaway PHP file in its own unprotected folder reports it; the
+        # sync below removes it again.
+        run: |
+          rclone lsf :sftp:webroots/by-route | grep -Eqx 'staging\.simi3000\.com_/?' \
+            || { echo "::error::No staging.simi3000.com route on the server — create the subdomain in one.com"; exit 1; }
+          mkdir -p probe
+          echo '<?php echo dirname(__DIR__);' > probe/path.php
+          echo 'Require all granted' > probe/.htaccess
+          rclone copy probe ":sftp:$STAGING_ROUTE/_probe"
+          root="$(curl -sS --retry 4 --retry-all-errors --max-time 30 "$STAGING_URL/_probe/path.php")"
+          case "$root" in /*) ;; *) echo "::error::Could not read the server path"; exit 1 ;; esac
+          echo "::add-mask::$root"
+          echo "STAGING_ROOT=$root" >> "$GITHUB_ENV"
+
+      - name: Build the staging copy
+        run: |
+          cp -R public _site
+
+          # Login. Only the bcrypt hash goes to the server; Apache never serves .ht* files.
+          printf '%s' "$STAGING_PASSWORD" | htpasswd -niB -C 10 "$STAGING_USER" > _site/.htpasswd
+          cat >> _site/.htaccess <<EOF
+
+          # ---- Vorschau only ----
+          AuthType Basic
+          AuthName "SIMI 3000 Vorschau"
+          AuthUserFile $STAGING_ROOT/.htpasswd
+          Require valid-user
+
+          # robots.txt stays readable, so crawlers learn to stay away.
+          <Files "robots.txt">
+            Require all granted
+          </Files>
+
+          <IfModule mod_headers.c>
+            Header always set X-Robots-Tag "noindex, nofollow"
+          </IfModule>
+          EOF
+
+          printf 'User-agent: *\nDisallow: /\n' > _site/robots.txt
+
+          # VORSCHAU label on every page, so nobody mistakes this for the live site.
+          label='<div style="position:fixed;top:0;left:0;z-index:2000;padding:4px 8px;background:#000;color:#fff;font:bold 12px/1 Arial,sans-serif;letter-spacing:.08em;pointer-events:none">VORSCHAU</div>'
+          find _site -name '*.html' -exec sed -i "s|</body>|$label\n</body>|" {} +
+
+      - name: Upload to staging.simi3000.com
+        run: |
+          rclone sync _site ":sftp:$STAGING_ROUTE" --ignore-times --delete-after --stats-one-line -v
+
+      - name: Smoke test the Vorschau
+        run: |
+          set -e
+          fetch() { curl -sS --connect-timeout 15 --max-time 30 --retry 4 --retry-delay 5 --retry-all-errors "$@"; }
+          code() { fetch -o /dev/null -w '%{http_code}' "$@"; }
+          sleep 5
+          c=$(code "$STAGING_URL/");                               echo "$c  without login";   [ "$c" = 401 ]
+          c=$(code -u "$STAGING_USER:$STAGING_PASSWORD" "$STAGING_URL/"); echo "$c  with login"; [ "$c" = 200 ]
+          c=$(code -u "$STAGING_USER:$STAGING_PASSWORD" "$STAGING_URL/.htpasswd"); echo "$c  .htpasswd"; [ "$c" = 403 ]
+          c=$(code "$STAGING_URL/_probe/path.php");                echo "$c  probe removed"; [ "$c" != 200 ]
+          fetch -u "$STAGING_USER:$STAGING_PASSWORD" "$STAGING_URL/" | grep -q VORSCHAU;    echo "label present"
+          fetch -D - -o /dev/null "$STAGING_URL/" | grep -qi '^x-robots-tag: noindex';        echo "noindex header present"
+          fetch "$STAGING_URL/robots.txt" | grep -q 'Disallow: /';                            echo "robots.txt blocks all"
+          echo "✓ Vorschau is up: $STAGING_URL"

@@ -48,6 +48,11 @@ GitHub Actions mirrors `public/` to one.com over SFTP (rclone) on every push to 
 checks pass, then smoke-tests the live site. Tobias has write access but not admin on the repo,
 so Simi manages the secrets. Undo = revert and push.
 
+## D11 — Vorschau on pull requests (2026-09-28)
+Every pull request against `main` deploys the whole site to staging.simi3000.com (one slot,
+latest wins), behind HTTP basic auth, with noindex header, disallow-all robots.txt and a
+VORSCHAU label — all added to a copy during upload, never to `public/`.
+
 ## Open
 - Branch protection on `main`: Tobias cannot be admin, so Simi sets it up (guided) — needed for the approval-workflow bucket.
 - Simi's Claude plan — needed for the access bucket.
