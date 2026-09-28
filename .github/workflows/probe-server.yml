@@ -25,7 +25,7 @@ jobs:
           SFTP_USER: ${{ secrets.SFTP_USER }}
         run: |
           printf 'pwd\nls -la\nls -la *\n' > batch
-          sshpass -e sftp -v -b batch \
+          sshpass -e sftp -v -o BatchMode=no -b batch \
             -o StrictHostKeyChecking=yes -o UserKnownHostsFile=.github/one-com-known-hosts \
             -o PubkeyAuthentication=no -o PreferredAuthentications=password,keyboard-interactive \
             "$SFTP_USER@$SFTP_HOST" 2>&1 | grep -vE '^debug1: (Reading|kex|compat|Local|Remote|SSH2_MSG|expecting|rekey|channel|Sending env|pledge|client_input|Requesting|Entering|Sending subsystem|Server accepts|Will attempt)'
