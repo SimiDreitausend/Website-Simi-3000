@@ -15,7 +15,7 @@
     --blur-thick: 0.03;
     --milk-thick: 0;
     --thick: 0;
-    --bend: -12deg;
+    --bend: -20deg;
   }
 
   * { box-sizing: border-box; }
@@ -240,7 +240,7 @@
   // Tobias's tuned values (2026-09-28). Idle hint and cursor are desktop only.
   const defaults = {
     desktop: { blur: 0.03, milk: 0.4, grain: 0.25, brush: 0.035, soft: 0.7, trail: 0.8,
-               hint: 'breathe', hintStrength: 0.6, hintSpeed: 1, hintSize: 0.12, hintIdle: 8, bend: -12 },
+               hint: 'breathe', hintStrength: 0.6, hintSpeed: 1, hintSize: 0.12, hintIdle: 8, bend: -20 },
     mobile:  { blur: 0.04, milk: 0.15, grain: 0.06, brush: 0.025, soft: 0.6, trail: 0.6 },
   };
   const presets = structuredClone(defaults);

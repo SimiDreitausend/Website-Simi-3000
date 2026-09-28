@@ -38,6 +38,11 @@ with the designed teaser page; the edit-and-approval workflow comes after launch
 Order: foundation → DESIGN.md → teaser page (local) → go live on simi3000.com → Vorschau →
 Simi's access and approval workflow → handover.
 
+## D9 — DESIGN.md holds intent, code holds values (2026-09-28)
+DESIGN.md stays short: what the site should be and feel like, and why. Exact sizes, timings and
+other values live in the code, so they're never maintained twice. Contact details live in
+CONTENT.md.
+
 ## Open
 - one.com upload method (SSH/SFTP availability on the plan) — needed for the go-live bucket.
 - Admin rights on the repo for branch protection — needed for the approval-workflow bucket.

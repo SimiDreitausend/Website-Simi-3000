@@ -11,7 +11,13 @@ edits against this file.
 | Impressum text | `public/impressum/index.html`, between the `CONTENT:impressum` markers | Plain paragraphs and links only |
 | Datenschutz text | `public/datenschutz/index.html`, between the `CONTENT:datenschutz` markers | Plain paragraphs and links only |
 
-The teaser page's text, photo and contact details will be added here once the page is built.
+Teaser page (exact locations are added when the page is built in `public/`):
+
+| What | Current value | Rules |
+|---|---|---|
+| E-Mail | mail@simi3000.com | A valid address |
+| Instagram | https://www.instagram.com/simi3.000/ | A profile URL |
+| Photo | Simi in a cactus garden | Portrait 3:4; re-encode as AVIF + JPEG (see AGENTS.md) |
 
 ## Not editable by content requests
 

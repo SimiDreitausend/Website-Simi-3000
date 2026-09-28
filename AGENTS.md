@@ -16,7 +16,7 @@ DECISIONS.md for why things are the way they are.
 
 | Question | File |
 |---|---|
-| How should it look, move, sound? | DESIGN.md |
+| How should it look and feel? | DESIGN.md (intent; exact values are in the code) |
 | What may Simi change, and where does it live? | CONTENT.md |
 | Why is it built this way? What is still open? | DECISIONS.md |
 | How do I run and deploy it? | README.md |
