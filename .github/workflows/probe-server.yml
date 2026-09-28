@@ -1,0 +1,28 @@
+# One-off, read-only: log in to one.com with the deploy secrets and list the folders, to find
+# the web root. Run by hand; delete once the deploy workflow exists. Logs are public — this
+# prints folder names only.
+name: Probe server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: sudo apt-get install -y -qq lftp > /dev/null
+      - name: List folders (two levels)
+        env:
+          LFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+        run: |
+          lftp -e "
+            set sftp:connect-program 'ssh -a -x -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$GITHUB_WORKSPACE/.github/one-com-known-hosts';
+            set net:max-retries 1;
+            pwd;
+            cls -la;
+            find --maxdepth=2 .;
+            bye
+          " --env-password "sftp://$SFTP_USER@$SFTP_HOST"
