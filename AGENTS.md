@@ -39,8 +39,9 @@ doesn't cover; ask instead.
 - **Keep images small.** Compress before committing; `scripts/check.py` rejects files over 1 MB.
 - **Photos:** AVIF via `<picture>` with a JPEG fallback. Encode with `avifenc` (Homebrew
   `libavif`), not macOS `sips` — sips writes tiled AVIFs that Chromium decodes but draws blank.
-- **`sketches/`** holds throwaway tuning pages. They are never deployed and never linked from
-  `public/`; serve the repo root to open them (`python3 -m http.server 8031`).
+- **Tuned values live once, in CSS custom properties** (`public/css/home.css`); `frost.js` reads
+  them from there. Change a value there, never duplicate it in JS or docs.
+- **`assets/`** holds source files (e.g. the glove drawing) for what's exported into `public/`.
 - Must work on a phone and on desktop, and respect `prefers-reduced-motion`.
 
 ## Verifying a change

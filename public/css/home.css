@@ -1,0 +1,106 @@
+/* The teaser page. DESIGN.md holds the intent; the exact values live here. */
+
+body {
+  height: 100dvh;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  justify-items: center;
+  gap: 12px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+h1 { margin: 0; font-size: 24px; font-weight: normal; }
+
+/* The stage is whatever space the name and buttons leave; the photo is the largest 3:4 box
+   that fits in it. */
+.stage {
+  min-height: 0;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  container-type: size;
+}
+
+/* ---- Frosted photo ----
+   Frost sizes are fractions of the photo's width (cqw of the photo), so the look is the same at
+   every screen size. frost.js reads --brush, --soft, --trail and the --hint-* values from here.
+   "Desktop" = a mouse or trackpad; everything else gets the mobile values. */
+.photo {
+  /* Mobile */
+  --blur: 0.04;          /* frost blur radius × photo width */
+  --milk: 0.15;          /* white haze on the glass */
+  --grain: 0.06;         /* noise texture on the glass */
+  --brush: 0.025;        /* radius of the clear spot × photo width */
+  --soft: 0.6;           /* share of the brush radius that is a soft edge */
+  --trail: 0.6;          /* seconds a spot takes to frost over again */
+  --hint-strength: 0;    /* idle breathing: off on mobile */
+
+  position: relative;
+  width: min(100cqw, 100cqh * 3 / 4);
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  touch-action: none;
+  container-type: inline-size;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .photo {
+    --blur: 0.03;
+    --milk: 0.4;
+    --grain: 0.25;
+    --brush: 0.035;
+    --soft: 0.7;
+    --trail: 0.8;
+    --hint-strength: 0.6; /* at its thickest, blur and haze are 1 + 0.7 × this times the base */
+    --hint-period: 6;     /* seconds per breath */
+    --hint-idle: 8;       /* seconds of stillness before the breathing returns */
+  }
+}
+
+.photo img, .photo canvas, .frost, .grain {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.photo img { object-fit: cover; }
+
+/* Base frost: static, never animated. */
+.frost {
+  backdrop-filter: blur(calc(var(--blur) * 100cqw));
+  -webkit-backdrop-filter: blur(calc(var(--blur) * 100cqw));
+  background-color: rgb(255 255 255 / var(--milk));
+}
+
+/* Breathing: a second static layer that makes the glass thicker; only its opacity animates.
+   (Animating the blur radius itself re-renders the blur every frame and flickers.) frost.js
+   sets --blur-thick and --milk-thick from --hint-strength. */
+.frost.thick {
+  backdrop-filter: blur(calc(var(--blur-thick, 0) * 100cqw));
+  -webkit-backdrop-filter: blur(calc(var(--blur-thick, 0) * 100cqw));
+  background-color: rgb(255 255 255 / var(--milk-thick, 0));
+  opacity: var(--thick, 0);
+}
+
+.grain {
+  opacity: var(--grain);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---- Contact ---- plain placeholders; button styling is open in DESIGN.md. */
+.contact { display: flex; gap: 12px; }
+
+.contact a {
+  padding: 8px 16px;
+  border: 1px solid currentColor;
+  color: inherit;
+  text-decoration: none;
+}
+
+footer { display: flex; gap: 12px; font-size: 12px; }
+footer a { color: inherit; }

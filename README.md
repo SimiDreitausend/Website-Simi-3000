@@ -7,10 +7,10 @@ Teaser website for SIMI 3000, an art project by Simi. Live at https://simi3000.c
 ```
 public/                  the website — the only folder that is deployed
   index.html             teaser page
+  css/  js/  img/        its styles, scripts (frost effect, glove cursor) and images
   impressum/             Impressum
   datenschutz/           Datenschutzerklärung
 scripts/check.py         pre-deploy checks
-sketches/                throwaway tuning pages (not deployed)
 assets/                  source files for what's in public/ (not deployed)
 AGENTS.md                rules for AI agents (CLAUDE.md imports it)
 DESIGN.md                visual source of truth

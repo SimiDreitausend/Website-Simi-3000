@@ -1,0 +1,51 @@
+/* Shared by every page. DESIGN.md holds the intent; the exact values live here. */
+
+html, body { margin: 0; }
+
+body {
+  background: #fff;
+  color: #000;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ---- Glove cursor (desktop only) ----
+   Without JS the glove is a plain CSS cursor. glove.js adds html.glove, hides the system cursor
+   and moves a glove element instead, so it can tilt. Hotspot = fingertip (21, 2). */
+@media (hover: hover) and (pointer: fine) {
+  html {
+    cursor: url("/img/cursor.png") 21 2, auto;
+    cursor: -webkit-image-set(url("/img/cursor.png") 1x, url("/img/cursor@2x.png") 2x) 21 2, auto;
+    cursor: image-set(url("/img/cursor.png") 1x, url("/img/cursor@2x.png") 2x) 21 2, auto;
+  }
+  a, button, summary, input, select, label { cursor: inherit; }
+  html.glove, html.glove * { cursor: none; }
+}
+
+.glove-cursor {
+  --bend: -20deg;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 40px;
+  height: 48px;
+  pointer-events: none;
+  z-index: 1000;
+  visibility: hidden;
+  /* Tilts around the fingertip, so the click point never moves. */
+  transform-origin: 21px 2px;
+  transition: rotate 180ms cubic-bezier(.3, .7, .4, 1);
+}
+.glove-cursor.visible { visibility: visible; }
+.glove-cursor.bent { rotate: var(--bend); }
+
+@media (prefers-reduced-motion: reduce) {
+  .glove-cursor { transition: none; }
+}
+
+/* ---- Legal pages ---- (their look is open in DESIGN.md; readable until then) */
+.legal {
+  max-width: 40rem;
+  padding: 16px;
+  line-height: 1.5;
+}
+.legal footer { display: flex; gap: 12px; margin-top: 32px; font-size: 12px; }

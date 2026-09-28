@@ -2,17 +2,42 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SIMI 3000</title>
+<link rel="stylesheet" href="/css/site.css">
+<link rel="stylesheet" href="/css/home.css">
+<link rel="preload" href="/img/simi.avif" as="image" type="image/avif">
 </head>
 <body>
-<!-- Placeholder until the teaser page is built from DESIGN.md. -->
-<main>
   <h1>SIMI 3000</h1>
-</main>
-<footer>
-  <a href="/impressum/">Impressum</a>
-  <a href="/datenschutz/">Datenschutz</a>
-</footer>
+
+  <main class="stage">
+    <div class="photo">
+      <!-- CONTENT:photo START -->
+      <picture>
+        <source srcset="/img/simi.avif" type="image/avif">
+        <img src="/img/simi.jpg" width="1125" height="1500" alt="Simi in einem Kakteengarten">
+      </picture>
+      <!-- CONTENT:photo END -->
+      <div class="frost"></div>
+      <div class="frost thick"></div>
+      <div class="grain"></div>
+    </div>
+  </main>
+
+  <nav class="contact" aria-label="Kontakt">
+    <!-- CONTENT:contact START -->
+    <a href="mailto:mail@simi3000.com">E-Mail</a>
+    <a href="https://www.instagram.com/simi3.000/" rel="noopener">Instagram</a>
+    <!-- CONTENT:contact END -->
+  </nav>
+
+  <footer>
+    <a href="/impressum/">Impressum</a>
+    <a href="/datenschutz/">Datenschutz</a>
+  </footer>
+
+  <script src="/js/frost.js" defer></script>
+  <script src="/js/glove.js" defer></script>
 </body>
 </html>
