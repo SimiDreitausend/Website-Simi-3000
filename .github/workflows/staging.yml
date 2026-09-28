@@ -76,7 +76,12 @@ jobs:
           AuthType Basic
           AuthName "SIMI 3000 Vorschau"
           AuthUserFile $STAGING_ROOT/.htpasswd
-          Require valid-user
+          # Plain http:// is let through only so the https redirect above can run first —
+          # otherwise the browser would ask for (and send) the password unencrypted.
+          <RequireAny>
+            Require expr "%{HTTPS} != 'on'"
+            Require valid-user
+          </RequireAny>
 
           # robots.txt stays readable, so crawlers learn to stay away.
           <Files "robots.txt">
@@ -108,6 +113,7 @@ jobs:
           c=$(code -u "$STAGING_USER:$STAGING_PASSWORD" "$STAGING_URL/"); echo "$c  with login"; [ "$c" = 200 ]
           c=$(code -u "$STAGING_USER:$STAGING_PASSWORD" "$STAGING_URL/.htpasswd"); echo "$c  .htpasswd"; [ "$c" = 403 ]
           c=$(code "$STAGING_URL/_probe/path.php");                echo "$c  probe removed"; [ "$c" != 200 ]
+          c=$(code "http://${STAGING_URL#https://}/");                 echo "$c  http:// redirects before any login"; [ "$c" = 301 ]
           fetch -u "$STAGING_USER:$STAGING_PASSWORD" "$STAGING_URL/" | grep -q VORSCHAU;    echo "label present"
           fetch -D - -o /dev/null "$STAGING_URL/" | grep -qi '^x-robots-tag: noindex';        echo "noindex header present"
           fetch "$STAGING_URL/robots.txt" | grep -q 'Disallow: /';                            echo "robots.txt blocks all"
