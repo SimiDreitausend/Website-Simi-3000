@@ -52,10 +52,11 @@ doesn't cover; ask instead.
 
 ## Git
 
-- Small commits with descriptive messages.
-- **`main` is live:** every push to `main` deploys to simi3000.com. Push only when Tobias asks,
-  and only after the checks and a local look.
-- Once the Vorschau exists, changes go through a pull request that deploys to the
-  password-protected preview first, and Tobias approves the merge. This section will be updated
-  then. This section
-  will be updated when that bucket lands.
+- **`main` is live:** every merge into `main` deploys to simi3000.com.
+- **Never push to `main`.** Every change goes through a pull request (DECISIONS.md, D12):
+  1. Work on a branch, small commits with descriptive messages, then open a pull request.
+  2. The pull request deploys to the Vorschau (https://staging.simi3000.com, login required).
+  3. **The other person approves it on GitHub** — changes for Tobias are approved by Simi, and
+     changes for Simi by Tobias. Never approve, or ask to auto-approve, on anyone's behalf.
+  4. After approval it is merged and goes live.
+- Push branches and open pull requests only when the person you're working for asks.
