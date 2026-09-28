@@ -10,6 +10,7 @@ public/                  the website — the only folder that is deployed
   impressum/             Impressum
   datenschutz/           Datenschutzerklärung
 scripts/check.py         pre-deploy checks
+sketches/                throwaway tuning pages (not deployed)
 AGENTS.md                rules for AI agents (CLAUDE.md imports it)
 DESIGN.md                visual source of truth
 CONTENT.md               what can be edited as content, and where

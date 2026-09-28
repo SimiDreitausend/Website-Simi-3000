@@ -6,8 +6,7 @@ mean "anything goes".
 
 ## Brand essence
 
-**Open.** What a visitor should feel in the first three seconds, and what the site must never
-feel like.
+**Open** — deliberately postponed until after launch, with colour and typography.
 
 ## Layout
 
@@ -17,12 +16,14 @@ One screen, three elements stacked on a single centred axis:
 2. **Photo** — huge, centred horizontally and vertically in the space between name and buttons.
 3. **Contact buttons** — below the photo.
 
-**Open:** whether everything fits one viewport without scrolling; the photo's maximum size;
-where the Impressum/Datenschutz links sit (they must be reachable from the page).
+The page never scrolls: name, photo and buttons always fit one viewport, on phone and desktop.
+The photo takes all the space the other elements leave, keeping its 3:4 ratio.
+
+Impressum and Datenschutz: small links at the very bottom.
 
 ## The photo and its effect
 
-**Image:** `public/img/simi.avif` (AVIF, quality 40, ~257 KB) with `public/img/simi.jpg` as the
+**Image:** `public/img/simi.avif` (AVIF, `avifenc -q 50`, ~246 KB) with `public/img/simi.jpg` as the
 fallback, served through `<picture>`. Portrait, 1125 × 1500 (3:4). Simi standing in a cactus
 garden.
 
@@ -38,12 +39,12 @@ Reference: a collage (not in the repo — third-party image) where a frosted rec
 soft and one hard edge covers half a face. The quality to match is the frosting itself: a
 strong, even blur that keeps colour and shape but no detail.
 
-**Open:**
-- Brush: size of the revealed area and how soft its edge is.
-- Trail: how long a revealed spot stays clear before it's frosted again.
-- Touch: whether dragging a finger reveals the same way (the page must work on phones).
-- Reduced motion: what `prefers-reduced-motion` users see.
-- Frost details: blur strength, and whether the glass adds a tint, brightening or grain.
+**Touch:** dragging a finger over the photo reveals it exactly like the mouse does.
+
+**Reduced motion:** with `prefers-reduced-motion`, the photo stays frosted and nothing reveals.
+
+**Open — tuned in `sketches/frost/`:** brush size and edge softness, how long the trail stays
+clear, blur strength, milkiness, grain.
 
 ## Colour
 
@@ -51,14 +52,17 @@ strong, even blur that keeps colour and shape but no detail.
 
 ## Typography
 
-**Open.** Typeface for the name and the buttons (and its licence/hosting).
+For now: **Arial** (system font, nothing to host) for everything. The real typeface is
+**Open** and comes with the brand identity.
 
 ## Contact / call to action
 
 Two buttons: **E-Mail** (opens a `mailto:` link) and **Instagram** (opens the profile).
 For now they are plain, unstyled buttons; styling comes later.
 
-**Open:** the email address and Instagram handle; button order.
+- Instagram: https://www.instagram.com/simi3.000/
+
+**Open:** the email address; button order.
 
 ## Motion
 
@@ -66,8 +70,8 @@ For now they are plain, unstyled buttons; styling comes later.
 
 ## Voice and copy
 
-German only. **Open:** how the name is set ("SIMI 3000" / "Simi 3000" / other), any text
-beyond the name and buttons.
+German only. The name is always written **SIMI 3000** (capitals, one space). No text beyond
+the name and the buttons.
 
 ## Legal pages
 

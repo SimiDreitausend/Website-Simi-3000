@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Frost sketch – SIMI 3000</title>
+<!-- Throwaway tuning page for DESIGN.md. Not deployed. Serve the repo root, not public/. -->
+<style>
+  :root {
+    /* All sizes are fractions of the photo's width, so the look holds at any screen size. */
+    --blur: 0.04;
+    --milk: 0.15;
+    --grain: 0.06;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; height: 100%; }
+
+  body {
+    height: 100dvh;
+    display: grid;
+    grid-template-rows: auto 1fr auto auto;
+    justify-items: center;
+    gap: 12px;
+    padding: 16px;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+  }
+
+  h1 { margin: 0; font-size: 24px; font-weight: normal; }
+
+  /* The stage is whatever space the name and buttons leave; the photo is the largest 3:4 box
+     that fits in it. */
+  .stage {
+    min-height: 0;
+    width: 100%;
+    display: grid;
+    place-items: center;
+    container-type: size;
+  }
+
+  .photo {
+    position: relative;
+    width: min(100cqw, 100cqh * 3 / 4);
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  .photo img, .photo canvas, .frost {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .frost {
+    backdrop-filter: blur(calc(var(--blur) * var(--w)));
+    -webkit-backdrop-filter: blur(calc(var(--blur) * var(--w)));
+    background-color: rgb(255 255 255 / var(--milk));
+  }
+
+  .frost::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: var(--grain);
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .contact { display: flex; gap: 12px; }
+
+  footer { font-size: 12px; display: flex; gap: 12px; }
+
+  /* Tuning panel */
+  details.panel {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    width: min(320px, calc(100vw - 24px));
+    background: rgb(255 255 255 / .92);
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    z-index: 10;
+  }
+  details.panel summary { cursor: pointer; font-weight: bold; }
+  .panel label { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; margin-top: 10px; }
+  .panel input[type=range] { grid-column: 1 / -1; width: 100%; }
+  .panel output { font-variant-numeric: tabular-nums; }
+  .panel .row { display: flex; gap: 8px; margin-top: 12px; }
+  .panel textarea { width: 100%; height: 110px; margin-top: 8px; font: 11px monospace; }
+</style>
+</head>
+<body>
+  <h1>SIMI 3000</h1>
+
+  <div class="stage">
+    <div class="photo" id="photo">
+      <picture>
+        <source srcset="../../public/img/simi.avif" type="image/avif">
+        <img id="sharp" src="../../public/img/simi.jpg" alt="Simi in einem Kakteengarten">
+      </picture>
+      <div class="frost"></div>
+      <canvas id="reveal" aria-hidden="true"></canvas>
+    </div>
+  </div>
+
+  <div class="contact">
+    <a href="mailto:">E-Mail</a>
+    <a href="https://www.instagram.com/simi3.000/">Instagram</a>
+  </div>
+
+  <footer>
+    <a href="#">Impressum</a>
+    <a href="#">Datenschutz</a>
+  </footer>
+
+  <details class="panel" open>
+    <summary>Frost settings</summary>
+
+    <label>Blur strength <output data-for="blur"></output>
+      <input type="range" id="blur" min="0" max="0.12" step="0.002" value="0.04"></label>
+    <label>Milkiness <output data-for="milk"></output>
+      <input type="range" id="milk" min="0" max="0.6" step="0.01" value="0.15"></label>
+    <label>Grain <output data-for="grain"></output>
+      <input type="range" id="grain" min="0" max="0.4" step="0.01" value="0.06"></label>
+    <label>Brush size <output data-for="brush"></output>
+      <input type="range" id="brush" min="0.02" max="0.4" step="0.005" value="0.12"></label>
+    <label>Edge softness <output data-for="soft"></output>
+      <input type="range" id="soft" min="0" max="1" step="0.05" value="0.6"></label>
+    <label>Trail stays clear (s) <output data-for="trail"></output>
+      <input type="range" id="trail" min="0.2" max="6" step="0.1" value="1.5"></label>
+
+    <div class="row">
+      <button id="copy" type="button">Copy values</button>
+      <button id="reset" type="button">Reset</button>
+    </div>
+    <textarea id="values" readonly></textarea>
+  </details>
+
+<script>
+  const photo = document.getElementById('photo');
+  const sharp = document.getElementById('sharp');
+  const canvas = document.getElementById('reveal');
+  const ctx = canvas.getContext('2d');
+  const root = document.documentElement;
+
+  const defaults = { blur: 0.04, milk: 0.15, grain: 0.06, brush: 0.12, soft: 0.6, trail: 1.5 };
+  const settings = { ...defaults };
+  const units = { blur: '× width', milk: '', grain: '', brush: '× width', soft: '', trail: 's' };
+
+  // ---- Settings panel ----------------------------------------------------------------------
+  function applySettings() {
+    for (const key of ['blur', 'milk', 'grain']) root.style.setProperty(`--${key}`, settings[key]);
+    for (const key in settings) {
+      document.getElementById(key).value = settings[key];
+      document.querySelector(`output[data-for=${key}]`).textContent = settings[key] + ' ' + units[key];
+    }
+    document.getElementById('values').value = JSON.stringify(settings, null, 2);
+  }
+  for (const key in settings) {
+    document.getElementById(key).addEventListener('input', (e) => {
+      settings[key] = Number(e.target.value);
+      applySettings();
+    });
+  }
+  document.getElementById('reset').onclick = () => { Object.assign(settings, defaults); applySettings(); };
+  document.getElementById('copy').onclick = async () => {
+    const text = JSON.stringify(settings, null, 2);
+    try { await navigator.clipboard.writeText(text); } catch { document.getElementById('values').select(); }
+  };
+  applySettings();
+
+  // ---- Canvas sizing -----------------------------------------------------------------------
+  let width = 0, height = 0, dpr = 1;
+  new ResizeObserver(() => {
+    const rect = photo.getBoundingClientRect();
+    width = rect.width; height = rect.height; dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    photo.style.setProperty('--w', width + 'px');
+    requestDraw();
+  }).observe(photo);
+
+  // ---- Trail ------------------------------------------------------------------------------
+  // Each point is a spot the pointer passed, with the time it passed. A spot is fully clear
+  // when fresh and fades back to frosted over `settings.trail` seconds.
+  let points = [];
+  let last = null;
+
+  function addPoint(x, y, t) {
+    const radius = settings.brush * width;
+    if (last) {
+      // Fill gaps when the pointer moves fast, so the trail stays continuous.
+      const dist = Math.hypot(x - last.x, y - last.y);
+      const step = Math.max(2, radius * 0.25);
+      for (let d = step; d < dist; d += step) {
+        const f = d / dist;
+        points.push({ x: last.x + (x - last.x) * f, y: last.y + (y - last.y) * f, t });
+      }
+    }
+    points.push({ x, y, t });
+    last = { x, y };
+    requestDraw();
+  }
+
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  photo.addEventListener('pointermove', (e) => {
+    if (reduceMotion.matches) return;
+    const rect = photo.getBoundingClientRect();
+    const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    for (const ev of events.length ? events : [e]) {
+      addPoint(ev.clientX - rect.left, ev.clientY - rect.top, performance.now());
+    }
+  });
+  photo.addEventListener('pointerdown', (e) => {
+    last = null;
+    photo.releasePointerCapture?.(e.pointerId); // let touch drags keep reporting moves here
+  });
+  photo.addEventListener('pointerleave', () => { last = null; });
+
+  // ---- Drawing ----------------------------------------------------------------------------
+  let frame = 0;
+  function requestDraw() { if (!frame) frame = requestAnimationFrame(draw); }
+
+  function draw(now) {
+    frame = 0;
+    const life = settings.trail * 1000;
+    points = points.filter((p) => now - p.t < life);
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!points.length || !sharp.complete) return;
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const radius = settings.brush * width;
+    const inner = radius * Math.min(1 - settings.soft, 0.99); // equal radii would paint nothing
+    for (const p of points) {
+      const age = (now - p.t) / life;
+      const alpha = 1 - age * age * (3 - 2 * age); // smoothstep: holds, then eases out
+      const g = ctx.createRadialGradient(p.x, p.y, inner, p.x, p.y, radius);
+      g.addColorStop(0, `rgba(0,0,0,${alpha})`);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Keep only the sharp photo where the mask is painted.
+    ctx.globalCompositeOperation = 'source-in';
+    ctx.drawImage(sharp, 0, 0, width, height);
+
+    requestDraw();
+  }
+  sharp.addEventListener('load', requestDraw);
+</script>
+</body>
+</html>
