@@ -5,8 +5,8 @@ in the code. Decisions here are Tobias's — if something isn't covered, ask; do
 
 ## The page
 
-One screen, no scrolling, on phone and desktop. On a single centred axis: **SIMI 3000** at the
-top, the photo as large as fits, then two links, **E-Mail** and **Instagram**. Small
+One screen, no scrolling, on phone and desktop. On a single centred axis: **SIMI 3000** in Arial bold at
+the top, the photo as large as fits, then two links, **E-Mail** and **Instagram**. Small
 Impressum and Datenschutz links at the very bottom. All links are classic, unstyled blue HTML
 links. German only; no other text.
 
