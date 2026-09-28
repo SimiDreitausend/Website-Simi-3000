@@ -24,7 +24,7 @@ jobs:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
           SFTP_USER: ${{ secrets.SFTP_USER }}
         run: |
-          printf 'pwd\nls -la\nls -la *\n' > batch
+          printf 'ls -la webroots/by-route\nls -la webroots/e9fe03fc/\n' > batch
           sshpass -e sftp -v -o BatchMode=no -b batch \
             -o StrictHostKeyChecking=yes -o UserKnownHostsFile=.github/one-com-known-hosts \
             -o PubkeyAuthentication=no -o PreferredAuthentications=password,keyboard-interactive \
